@@ -4,6 +4,9 @@ Version 1.6   27.Sep.1998
 
 * `--help' now prints to stdout, following the GNU Coding Standards.
 
+* Makefiles: Added `make uninstall' target, enabled `./configure's
+  program name transformations, made VPATH builds possible.
+
 
 Version 1.5.2   6.Aug.1998
 
