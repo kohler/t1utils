@@ -622,8 +622,8 @@ error(char *message, ...)
 void
 short_usage(void)
 {
-  fprintf(stderr, "Usage: %s [-abl] [input [output]]\n\
-Type %s --help for more information.\n",
+  fprintf(stderr, "Usage: %s [OPTION]... [INPUT [OUTPUT]]\n\
+Try `%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
@@ -633,10 +633,10 @@ usage(void)
 {
   printf("\
 `T1asm' translates a human-readable version of a PostScript Type 1 font into\n\
-the more usual binary or ASCII format. Output is written to standard out.\n\
-Use `t1disasm' to go the other way.\n\
+the more usual binary or ASCII format. Output is written to standard out\n\
+unless an OUTPUT file is given. Use `t1disasm' to go the other way.\n\
 \n\
-Usage: %s [options] [input [output]]\n\
+Usage: %s [OPTION]... [INPUT [OUTPUT]]\n\
 \n\
 Options:\n\
   --pfa, -a                     Output font in ASCII (PFA) format.\n\
@@ -703,7 +703,7 @@ int main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("t1asm version %s\n", VERSION);
-      printf("Copyright (C) 1992-8 I. Lee Hetherington, Eddie Kohler et al.\n\
+      printf("Copyright (C) 1992-9 I. Lee Hetherington, Eddie Kohler et al.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");

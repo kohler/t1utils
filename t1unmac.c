@@ -252,8 +252,8 @@ error(char *message, ...)
 void
 short_usage(void)
 {
-  fprintf(stderr, "Usage: %s [-abr] input [output]\n\
-Type %s --help for more information.\n",
+  fprintf(stderr, "Usage: %s [OPTION]... INPUT [OUTPUT]\n\
+Try `%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
@@ -263,9 +263,10 @@ usage(void)
 {
   printf("\
 `T1unmac' extracts a PostScript Type 1 font from a Macintosh resource fork\n\
-or MacBinary file and writes it to standard out.\n\
+or MacBinary file. Output is written to standard out unless an OUTPUT file\n\
+is given.\n\
 \n\
-Usage: %s [options] input [output]\n\
+Usage: %s [OPTION]... INPUT [OUTPUT]\n\
 \n\
 Options:\n\
   --raw, -r                     Input font is raw Macintosh resource fork.\n\
@@ -334,7 +335,7 @@ int main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("t1unmac version %s\n", VERSION);
-      printf("Copyright (C) 1992-8 I. Lee Hetherington, Eddie Kohler et al.\n\
+      printf("Copyright (C) 1992-9 I. Lee Hetherington, Eddie Kohler et al.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");

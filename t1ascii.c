@@ -139,8 +139,8 @@ error(char *message, ...)
 void
 short_usage(void)
 {
-  fprintf(stderr, "Usage: %s [input [output]]\n\
-Type %s --help for more information.\n",
+  fprintf(stderr, "Usage: %s [OPTION]... [INPUT [OUTPUT]]\n\
+Try `%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
@@ -150,9 +150,10 @@ usage(void)
 {
   printf("\
 `T1ascii' translates a PostScript Type 1 font from binary to ASCII format.\n\
-Output is written to standard out. Use `t1binary' to go the other way.\n\
+Output is written to standard out unless an OUTPUT file is given. Use\n\
+`t1binary' to go the other way.\n\
 \n\
-Usage: %s [options] [input [output]]\n\
+Usage: %s [OPTION]... [INPUT [OUTPUT]]\n\
 \n\
 Options:\n\
   --output=FILE, -o FILE        Write output to FILE.\n\
@@ -196,7 +197,7 @@ int main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("t1ascii version %s\n", VERSION);
-      printf("Copyright (C) 1992-8 I. Lee Hetherington, Eddie Kohler et al.\n\
+      printf("Copyright (C) 1992-9 I. Lee Hetherington, Eddie Kohler et al.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
