@@ -756,7 +756,7 @@ static Clp_Option options[] = {
   { "raw", 'r', RAW_OPT, 0, 0 },
   { "version", 0, VERSION_OPT, 0, 0 },
 };
-static char *program_name;
+static const char *program_name;
 
 
 void
@@ -835,7 +835,7 @@ main(int argc, char *argv[])
   
   Clp_Parser *clp =
     Clp_NewParser(argc, (const char * const *)argv, sizeof(options) / sizeof(options[0]), options);
-  program_name = (char *)Clp_ProgramName(clp);
+  program_name = Clp_ProgramName(clp);
   
   /* interpret command line arguments using CLP */
   while (1) {

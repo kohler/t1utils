@@ -235,7 +235,7 @@ static void eexec_byte(byte b)
 /* This function outputs a null-terminated string through possible eexec
    encryption. */
 
-static void eexec_string(char *string)
+static void eexec_string(const char *string)
 {
   while (*string)
     eexec_byte(*string++);
@@ -394,7 +394,7 @@ static void charstring_end()
 {
   byte *bp;
 
-  sprintf(line, "%d ", charstring_bp - charstring_buf);
+  sprintf(line, "%d ", (int) (charstring_bp - charstring_buf));
   eexec_string(line);
   sprintf(line, "%s ", cs_start);
   eexec_string(line);
@@ -549,7 +549,7 @@ static Clp_Option options[] = {
   { "pfb", 'b', PFB_OPT, 0, 0 },
   { "version", 0, VERSION_OPT, 0, 0 },
 };
-static char *program_name;
+static const char *program_name;
 
 void
 fatal_error(const char *message, ...)
@@ -614,7 +614,7 @@ int main(int argc, char *argv[])
   
   Clp_Parser *clp =
     Clp_NewParser(argc, (const char * const *)argv, sizeof(options) / sizeof(options[0]), options);
-  program_name = (char *)Clp_ProgramName(clp);
+  program_name = Clp_ProgramName(clp);
   
   /* interpret command line arguments using CLP */
   while (1) {

@@ -194,7 +194,7 @@ main(int argc, char *argv[])
   
   Clp_Parser *clp =
     Clp_NewParser(argc, (const char * const *)argv, sizeof(options) / sizeof(options[0]), options);
-  program_name = (char *)Clp_ProgramName(clp);
+  program_name = Clp_ProgramName(clp);
   
   /* interpret command line arguments using CLP */
   while (1) {

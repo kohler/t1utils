@@ -414,13 +414,13 @@ eexec_line(unsigned char *line, int line_len)
        badly: a charstring definition follows "/Charstrings ... begin", ON THE
        SAME LINE. */
   {
-      const char *CharStrings = (const char *) strstr((const char *)line, "/CharStrings ");
+      char *CharStrings = (char *) strstr((char *)line, "/CharStrings ");
       int crap, n;
       char should_be_slash = 0;
       if (CharStrings
 	  && sscanf(CharStrings + 12, " %d dict dup begin %c%n", &crap, &should_be_slash, &n) >= 2
 	  && should_be_slash == '/') {
-	  int len = (CharStrings + 12 + n - 1) - (const char *) line;
+	  int len = (CharStrings + 12 + n - 1) - (char *) line;
 	  fprintf(ofp, "%.*s\n", len, line);
 	  return eexec_line((unsigned char *) (CharStrings + 12 + n - 1), line_len - len);
       }
@@ -591,7 +591,7 @@ static Clp_Option options[] = {
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
   { "version", 0, VERSION_OPT, 0, 0 },
 };
-static char *program_name;
+static const char *program_name;
 
 void
 fatal_error(const char *message, ...)
@@ -656,7 +656,7 @@ main(int argc, char *argv[])
   
   Clp_Parser *clp =
     Clp_NewParser(argc, (const char * const *)argv, sizeof(options) / sizeof(options[0]), options);
-  program_name = (char *)Clp_ProgramName(clp);
+  program_name = Clp_ProgramName(clp);
   
   /* interpret command line arguments using CLP */
   while (1) {
