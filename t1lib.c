@@ -98,6 +98,7 @@ process_pfa(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
   int c = 0;
   int blocktyp = PFA_ASCII;
   char saved_orphan = 0;
+  (void)ifp_filename;
   
   while (c != EOF) {
     char *p = line;
@@ -287,15 +288,15 @@ process_pfb(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
 void
 init_pfb_writer(struct pfb_writer *w, int blocklen, FILE *f)
 {
-  w->len = DEFAULT_BLOCKLEN;
-  w->buf = (unsigned char *)malloc(w->len);
-  if (!w->buf)
-    fatal_error("out of memory");
-  w->max_len = (blocklen <= 0 ? 0xFFFFFFFFU : blocklen);
-  w->pos = 0;
-  w->blocktyp = PFB_ASCII;
-  w->binary_blocks_written = 0;
-  w->f = f;
+    w->len = DEFAULT_BLOCKLEN;
+    w->buf = (unsigned char *)malloc(w->len);
+    if (!w->buf)
+	fatal_error("out of memory");
+    w->max_len = (blocklen <= 0 ? 0xFFFFFFFFU : (unsigned)blocklen);
+    w->pos = 0;
+    w->blocktyp = PFB_ASCII;
+    w->binary_blocks_written = 0;
+    w->f = f;
 }
 
 void
@@ -327,7 +328,7 @@ pfb_writer_grow_buf(struct pfb_writer *w)
 {
   if (w->len < w->max_len) {
     /* grow w->buf */
-    int new_len = w->len * 2;
+    unsigned new_len = w->len * 2;
     unsigned char *new_buf;
     if (new_len > w->max_len)
       new_len = w->max_len;
@@ -399,11 +400,12 @@ static unsigned short crctab[256] = {
  */
 
 int
-crcbuf(int crc, unsigned int len, unsigned char *buf)
+crcbuf(int crc, unsigned int len, const char *buf)
 {
-  while (len--)
-    crc = ((crc << 8) & 0xFF00) ^ crctab[((crc >> 8) & 0xFF) ^ *buf++];
-  return crc;
+    const unsigned char *ubuf = (const unsigned char *)buf;
+    while (len--)
+	crc = ((crc << 8) & 0xFF00) ^ crctab[((crc >> 8) & 0xFF) ^ *ubuf++];
+    return crc;
 }
 
 #ifdef __cplusplus

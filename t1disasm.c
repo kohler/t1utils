@@ -67,18 +67,6 @@
 #include "clp.h"
 #include "t1lib.h"
 
-/* int32 must be at least 32-bit and uint16 must be at least 16-bit */
-#if INT_MAX >= 0x7FFFFFFFUL
-typedef int int32;
-#else
-typedef long int32;
-#endif
-#if USHRT_MAX >= 0xFFFFUL
-typedef unsigned short uint16;
-#else
-typedef unsigned int uint16;
-#endif
-
 typedef unsigned char byte;
 
 static FILE *ofp;
@@ -87,9 +75,9 @@ static char cs_start[10];
 static int unknown = 0;
 
 /* decryption stuff */
-static uint16 c1 = 52845, c2 = 22719;
-static uint16 cr_default = 4330;
-static uint16 er_default = 55665;
+static uint16_t c1 = 52845, c2 = 22719;
+static uint16_t cr_default = 4330;
+static uint16_t er_default = 55665;
 
 static int error_count = 0;
 void fatal_error(const char *message, ...);
@@ -100,7 +88,7 @@ void error(const char *message, ...);
    of each charstring. */
 
 static void
-set_lenIV(char *line)
+set_lenIV(const char *line)
 {
   char *p = strstr(line, "/lenIV ");
 
@@ -167,7 +155,7 @@ static void
 decrypt_charstring(unsigned char *line, int len)
 {
   int i;
-  int32 val;
+  int32_t val;
   char buf[20];
 
   /* decrypt charstring */
@@ -175,12 +163,12 @@ decrypt_charstring(unsigned char *line, int len)
     /* only decrypt if lenIV >= 0 -- negative lenIV means unencrypted
        charstring. Thanks to Tom Kacvinsky <tjk@ams.org> */
     int i;
-    uint16 cr = cr_default;
+    uint16_t cr = cr_default;
     byte plain;
     for (i = 0; i < len; i++) {
       byte cipher = line[i];
       plain = (byte)(cipher ^ (cr >> 8));
-      cr = (uint16)((cipher + cr) * c1 + c2);
+      cr = (uint16_t)((cipher + cr) * c1 + c2);
       line[i] = plain;
     }
     line += lenIV;
@@ -388,10 +376,10 @@ eexec_line(unsigned char *line, int line_len)
   if (pos + 2 + cs_start_len < line_len
       && pos > digits
       && line[pos] == ' '
-      && strncmp(line + pos + 1, cs_start, cs_start_len) == 0
+      && strncmp((const char *)(line + pos + 1), cs_start, cs_start_len) == 0
       && line[pos + 1 + cs_start_len] == ' ') {
     /* check if charstring is long enough */
-    int cs_len = atoi(line + digits);
+    int cs_len = atoi((const char *)(line + digits));
     if (pos + 2 + cs_start_len + cs_len < line_len) {
       /* long enough! */
       if (line[line_len - 1] == '\r') {
@@ -418,13 +406,13 @@ eexec_line(unsigned char *line, int line_len)
     line[line_len - 1] = '\n';
     cut_newline = 1;
   }
-  set_lenIV(line);
-  set_cs_start(line);
+  set_lenIV((const char *)line);
+  set_cs_start((char *)line);
   fprintf(ofp, "%.*s", line_len, line);
   save_len = 0;
   
   /* look for `currentfile closefile' to see if we should stop decrypting */
-  if (strstr(line, "currentfile closefile") != 0)
+  if (strstr((const char *)line, "currentfile closefile") != 0)
     in_eexec = -1;
   
   return cut_newline;
@@ -467,7 +455,7 @@ disasm_output_ascii(char *line)
 	save[i] = 0;
 
       /* output it */
-      disasm_output_ascii(save + start);
+      disasm_output_ascii((char *)(save + start));
 
       /* repair damage */
       if (i < save_len) {
@@ -491,7 +479,7 @@ static void
 disasm_output_binary(unsigned char *data, int len)
 {
   static int ignore_newline;
-  static uint16 er;
+  static uint16_t er;
   
   byte plain;
   int i;
@@ -512,7 +500,7 @@ disasm_output_binary(unsigned char *data, int len)
     for (i = 0; i < len && in_eexec < 4; i++, in_eexec++) {
       byte cipher = data[i];
       plain = (byte)(cipher ^ (er >> 8));
-      er = (uint16)((cipher + er) * c1 + c2);
+      er = (uint16_t)((cipher + er) * c1 + c2);
       data[i] = plain;
     }
     data += i;
@@ -528,7 +516,7 @@ disasm_output_binary(unsigned char *data, int len)
     for (; i < len; i++) {
       byte cipher = data[i];
       plain = (byte)(cipher ^ (er >> 8));
-      er = (uint16)((cipher + er) * c1 + c2);
+      er = (uint16_t)((cipher + er) * c1 + c2);
       data[i] = plain;
       if (plain == '\r' || plain == '\n') break;
     }

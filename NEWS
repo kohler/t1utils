@@ -1,5 +1,11 @@
 T1utils NEWS
 
+Version 1.24   6.Sep.2001
+
+* Fixed compilation bugs on various platforms reported by Nelson H. F.
+  Beebe <beebe@math.utah.edu>.
+
+
 Version 1.23   18.Jun.2001
 
 * Fixed Macintosh file bugs: the MacBinary CRC was calculated incorrectly,

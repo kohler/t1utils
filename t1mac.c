@@ -30,15 +30,6 @@
 #include "clp.h"
 #include "t1lib.h"
 
-/* int32 must be at least 32-bit */
-#if INT_MAX >= 0x7FFFFFFFUL
-typedef int int32;
-typedef unsigned int uint32;
-#else
-typedef long int32;
-typedef unsigned long uint32;
-#endif
-
 typedef unsigned char byte;
 
 void fatal_error(const char *message, ...);
@@ -73,11 +64,11 @@ static char *font_name;
 
 /* information about the resources being built */
 typedef struct Rsrc {
-  int32 type;
+  int32_t type;
   int id;
   int attrs;
   int data_offset;
-  uint32 data_len;
+  uint32_t data_len;
   int next_in_type;
   int next_type;
 } Rsrc;
@@ -221,7 +212,7 @@ static const unsigned char small_icon_4_data[] = {
 /* fseek with fatal_error */
 
 static void
-reposition(FILE *fi, int32 absolute)
+reposition(FILE *fi, int32_t absolute)
 {
   if (fseek(fi, absolute, 0) == -1)
     fatal_error("can't seek to position %d", absolute);
@@ -244,7 +235,7 @@ write_two(int c, FILE *f)
 }
 
 static void
-write_three(int32 c, FILE *f)
+write_three(int32_t c, FILE *f)
 {
   putc((c >> 16) & 255, f);
   putc((c >> 8) & 255, f);
@@ -252,7 +243,7 @@ write_three(int32 c, FILE *f)
 }
 
 static void
-write_four(int32 c, FILE *f)
+write_four(int32_t c, FILE *f)
 {
   putc((c >> 24) & 255, f);
   putc((c >> 16) & 255, f);
@@ -277,7 +268,7 @@ store_two(int c, char *s)
 }
 
 static void
-store_four(int32 c, char *s)
+store_four(int32_t c, char *s)
 {
   s[0] = (char)((c >> 24) & 255);
   s[1] = (char)((c >> 16) & 255);
@@ -287,7 +278,7 @@ store_four(int32 c, char *s)
 
 static void
 output_new_rsrc(const char *rtype, int rid, int attrs,
-		const char *data, uint32 len)
+		const char *data, uint32_t len)
 {
   Rsrc *r;
   if (nrsrc >= rsrc_cap) {
@@ -378,7 +369,7 @@ t1mac_output_ascii(char *s)
       const char *t = ++s;
       while (*t && !isspace(*t)) t++;
       free(font_name);
-      font_name = malloc(t - s + 1);
+      font_name = (char *)malloc(t - s + 1);
       memcpy(font_name, s, t - s);
       font_name[t - s] = 0;
     }
@@ -406,11 +397,11 @@ t1mac_output_end(void)
 
 /* finish off the resource fork */
 
-static uint32
+static uint32_t
 complete_rfork(void)
 {
-  uint32 reflist_offset, total_data_len;
-  uint32 typelist_len;
+  uint32_t reflist_offset, total_data_len;
+  uint32_t typelist_len;
   int i, j, ntypes;
 
   /* analyze resources */
@@ -483,7 +474,7 @@ complete_rfork(void)
 /* write a MacBinary II file */
 
 static void
-output_raw(FILE *rf, int32 len, FILE *f)
+output_raw(FILE *rf, int32_t len, FILE *f)
 {
   char buf[2048];
   reposition(rf, 0);
@@ -496,7 +487,7 @@ output_raw(FILE *rf, int32 len, FILE *f)
 }
 
 static void
-output_macbinary(FILE *rf, int32 rf_len, const char *filename, FILE *f)
+output_macbinary(FILE *rf, int32_t rf_len, const char *filename, FILE *f)
 {
   int i, len = strlen(filename);
   char buf[128];
@@ -559,10 +550,10 @@ output_macbinary(FILE *rf, int32 rf_len, const char *filename, FILE *f)
 #define APPLESINGLE_REALNAME_ENTRY 3
 
 static void
-output_applesingle(FILE *rf, int32 rf_len, const char *filename, FILE *f,
+output_applesingle(FILE *rf, int32_t rf_len, const char *filename, FILE *f,
 		   int appledouble)
 {
-  uint32 offset;
+  uint32_t offset;
   int i, nentries, len = strlen(filename);
   if (appledouble)		/* magic number */
     write_four(APPLEDOUBLE_MAGIC, f);
@@ -695,7 +686,7 @@ binhex_buffer(const byte *s, int len, FILE *f)
 }
 
 static void
-output_binhex(FILE *rf, int32 rf_len, const char *filename, FILE *f)
+output_binhex(FILE *rf, int32_t rf_len, const char *filename, FILE *f)
 {
   int crc, len = strlen(filename);
   char buf[2048];
@@ -718,7 +709,7 @@ output_binhex(FILE *rf, int32 rf_len, const char *filename, FILE *f)
   fputs("(This file must be converted with BinHex 4.0)\n:", f);
 
   /* BinHex the header */
-  binhex_buffer(buf, 24+len, f);
+  binhex_buffer((const byte *)buf, 24+len, f);
 
   /* resource fork data */
   reposition(rf, 0);
@@ -727,11 +718,11 @@ output_binhex(FILE *rf, int32 rf_len, const char *filename, FILE *f)
     int n = (rf_len < 2048 ? rf_len : 2048);
     fread(buf, 1, n, rf);
     crc = crcbuf(crc, n, buf);	/* update CRC */
-    binhex_buffer(buf, n, f);
+    binhex_buffer((const byte *)buf, n, f);
     rf_len -= n;
   }
   store_two(crc, buf);		/* resource fork CRC */
-  binhex_buffer(buf, 2, f);
+  binhex_buffer((const byte *)buf, 2, f);
   binhex_buffer(0, 0, f);	/* get rid of any remaining bits */
   fputs(":\n", f);		/* trailer */
 }
@@ -832,7 +823,7 @@ main(int argc, char **argv)
   const char *ofp_filename = "<stdout>";
   const char *set_font_name = 0;
   struct font_reader fr;
-  uint32 rfork_len;
+  uint32_t rfork_len;
   int raw = 0, macbinary = 1, applesingle = 0, appledouble = 0, binhex = 0;
   
   Clp_Parser *clp =

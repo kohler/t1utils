@@ -51,15 +51,6 @@
 #include "clp.h"
 #include "t1lib.h"
 
-/* int32 must be at least 32-bit */
-#if INT_MAX >= 0x7FFFFFFFUL
-typedef int int32;
-typedef unsigned int uint32;
-#else
-typedef long int32;
-typedef unsigned long uint32;
-#endif
-
 /* for PFB block buffering */
 void fatal_error(const char *message, ...);
 void error(const char *message, ...);
@@ -85,10 +76,10 @@ read_two(FILE *fi)
   return val;
 }
 
-static int32
+static int32_t
 read_three(FILE *fi)
 {
-  int32 val;
+  int32_t val;
 
   val = getc(fi);
   val = (val << 8) | getc(fi);
@@ -97,10 +88,10 @@ read_three(FILE *fi)
   return val;
 }
 
-static int32
+static int32_t
 read_four(FILE *fi)
 {
-  int32 val;
+  int32_t val;
 
   val = getc(fi);
   val = (val << 8) | getc(fi);
@@ -113,7 +104,7 @@ read_four(FILE *fi)
 /* reposition a file with error messages */
 
 static void
-reposition(FILE *fi, int32 absolute)
+reposition(FILE *fi, int32_t absolute)
 {
   if (fseek(fi, absolute, 0) == -1)
     fatal_error("can't seek to position %d\n\
@@ -149,12 +140,12 @@ output_hex_byte(FILE *fo, int b)
    first. */
 
 static int
-extract_data(FILE *fi, FILE *fo, struct pfb_writer *w, int32 offset, int pfb)
+extract_data(FILE *fi, FILE *fo, struct pfb_writer *w, int32_t offset, int pfb)
 {
   enum PS_type { PS_ascii = 1, PS_binary = 2, PS_end = 5 };
-  static enum PS_type last_type = -1;
+  static int last_type = -1;
   static int skip_newline = 0;
-  int32 len;
+  int32_t len;
   int more = 1;
   int i, c;
 
@@ -551,8 +542,8 @@ main(int argc, char **argv)
   FILE *ofp = 0;
   struct pfb_writer w;
   const char *ifp_name = "<stdin>";
-  int32 res_offset, res_data_offset, res_map_offset, type_list_offset;
-  int32 post_type;
+  int32_t res_offset, res_data_offset, res_map_offset, type_list_offset;
+  int32_t post_type;
   int num_types, num_extracted = 0, pfb = 1;
   int raw = 0, appledouble = 0, binhex = 0, macbinary = 0;
   
@@ -730,7 +721,7 @@ particular purpose.\n");
     
   } else if (macbinary) {	/* MacBinary (I or II) file */
     const char *check;
-    int32 data_fork_size;
+    int32_t data_fork_size;
 
     /* check integrity of file */
     check = check_macbinary(ifp);
@@ -822,10 +813,10 @@ particular purpose.\n");
   num_types = read_two(ifp) + 1;
   
   /* find POST type */
-  post_type =  (int32)('P' & 0xff) << 24;
-  post_type |= (int32)('O' & 0xff) << 16;
-  post_type |= (int32)('S' & 0xff) << 8;
-  post_type |= (int32)('T' & 0xff);
+  post_type =  (int32_t)('P' & 0xff) << 24;
+  post_type |= (int32_t)('O' & 0xff) << 16;
+  post_type |= (int32_t)('S' & 0xff) << 8;
+  post_type |= (int32_t)('T' & 0xff);
   
   while (num_types--) {
     if (read_four(ifp) == post_type) {
@@ -881,7 +872,7 @@ particular purpose.\n");
   while (num_types--) {
     int t = read_four(ifp);
     int num_of_type = 1 + read_two(ifp);
-    int32 save_offset = ftell(ifp) + 2;
+    int32_t save_offset = ftell(ifp) + 2;
     reposition(ifp, type_list_offset + read_two(ifp));
     while (num_of_type--) {
       FILE *f;

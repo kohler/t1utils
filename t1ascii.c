@@ -50,13 +50,6 @@
 #include "clp.h"
 #include "t1lib.h"
 
-/* int32 must be at least 32-bit */
-#if INT_MAX >= 0x7FFFFFFFUL
-typedef int int32;
-#else
-typedef long int32;
-#endif
-
 static FILE *ofp;
 static int line_length = 64;
 

@@ -64,18 +64,6 @@
 #include "clp.h"
 #include "t1lib.h"
 
-/* int32 must be at least 32-bit and uint16 must be at least 16-bit */
-#if INT_MAX >= 0x7FFFFFFFUL
-typedef int int32;
-#else
-typedef long int32;
-#endif
-#if USHRT_MAX >= 0xFFFFUL
-typedef unsigned short uint16;
-#else
-typedef unsigned int uint16;
-#endif
-
 #define LINESIZE 512
 
 typedef unsigned char byte;
@@ -105,8 +93,8 @@ static byte charstring_buf[65535];
 static byte *charstring_bp;
 
 /* decryption stuff */
-static uint16 er, cr;
-static uint16 c1 = 52845, c2 = 22719;
+static uint16_t er, cr;
+static uint16_t c1 = 52845, c2 = 22719;
 
 /* table of charstring commands */
 static struct command {
@@ -185,7 +173,7 @@ static byte eencrypt(byte plain)
   byte cipher;
 
   cipher = (byte)(plain ^ (er >> 8));
-  er = (uint16)((cipher + er) * c1 + c2);
+  er = (uint16_t)((cipher + er) * c1 + c2);
   return cipher;
 }
 
@@ -198,7 +186,7 @@ static byte cencrypt(byte plain)
   if (lenIV < 0) return plain;
 
   cipher = (byte)(plain ^ (cr >> 8));
-  cr = (uint16)((cipher + cr) * c1 + c2);
+  cr = (uint16_t)((cipher + cr) * c1 + c2);
   return cipher;
 }
 
@@ -390,10 +378,10 @@ static void charstring_start()
 
 static void charstring_byte(int v)
 {
-  byte b = (byte)(v & 0xff);
-  if (charstring_bp - charstring_buf > sizeof(charstring_buf))
-    fatal_error("charstring buffer overflow");
-  *charstring_bp++ = cencrypt(b);
+    byte b = (byte)(v & 0xff);
+    if (charstring_bp - charstring_buf > (int)sizeof(charstring_buf))
+	fatal_error("charstring buffer overflow");
+    *charstring_bp++ = cencrypt(b);
 }
 
 /* This function outputs buffered, encrypted charstring data through possible

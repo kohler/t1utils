@@ -50,15 +50,6 @@
 #include "clp.h"
 #include "t1lib.h"
 
-/* int32 must be at least 32-bit */
-#if INT_MAX >= 0x7FFFFFFFUL
-typedef int int32;
-typedef unsigned int uint32;
-#else
-typedef long int32;
-typedef unsigned long uint32;
-#endif
-
 typedef unsigned char byte;
 
 /* for PFB block buffering */
