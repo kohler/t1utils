@@ -1,5 +1,14 @@
 T1utils NEWS
 
+Version 1.19   3.May.2000
+
+* t1mac: Generated Macintosh fonts now use a custom-drawn icon set, rather
+  than Adobe's default. They also have a t1utils-specific creator signature
+  (T1UT), and their file information mentions t1utils.
+
+* t1mac: Added the `--filename' option.
+
+
 Version 1.18   2.May.2000
 
 * t1mac: Fixed bug where generated files appeared corrupted to Macintoshes.

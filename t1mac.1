@@ -5,6 +5,7 @@ t1mac \- translate a PFA or PFB PostScript font into Macintosh format
 .B t1mac
 \%[\fB\-\-macbinary\fR | \fB\-\-applesingle\fR |
 \fB\-\-appledouble\fR | \fB\-\-binhex\fR | \fB\-\-raw\fR]
+\%[\fB\-\-filename\fR \fIname\fR]
 \%[\fIinput\fR [\fIoutput\fR]]
 .SH DESCRIPTION
 .B t1mac
@@ -40,6 +41,12 @@ Indicates that output should be in AppleDouble format.
 .TP 5
 .BR \-\-binhex
 Indicates that output should be in BinHex 4.0 format.
+.TP 5
+.BR \-\-filename "=\fIname\fR, " \-n " \fIname\fR"
+Sets the Macintosh filename of the output font to \fIname\fR. The default
+is to construct the filename from the font's name using established
+Macintosh conventions. This option is not useful when output is a raw
+resource fork.
 .SH "SEE ALSO"
 .LP
 .BR t1unmac (1),

@@ -886,15 +886,18 @@ particular purpose.\n");
     while (num_of_type--) {
       FILE *f;
       char buf[2048];
-      int x = ftell(ifp);
-      int i = read_two(ifp);	/* ID */
-      int crap = read_two(ifp);
-      int attrs = read_one(ifp);
+      int x, i, attrs;
+      x = ftell(ifp);
+      i = read_two(ifp);	/* ID */
+      read_two(ifp);
+      attrs = read_one(ifp);
       sprintf(buf, "/tmp/x.%c%c%c%c.%d", (t>>24)&255, (t>>16)&255, (t>>8)&255, t&255, i);
+      fprintf(stderr, "%c%c%c%c.%d %d", (t>>24)&255, (t>>16)&255, (t>>8)&255, t&255, i, attrs);
       if ((f = fopen(buf, "wb"))) {
 	int l;
 	reposition(ifp, res_data_offset + read_three(ifp));
 	l = read_four(ifp);
+	fprintf(stderr, " %d\n", l);
 	while (l > 0) {
 	  int n = (l < 2048 ? l : 2048);
 	  fread(buf, 1, n, ifp);
