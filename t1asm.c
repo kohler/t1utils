@@ -227,11 +227,11 @@ static void output_block()
   putc((int)((blockpos >> 8) & 0xff), ofp);
   putc((int)((blockpos >> 16) & 0xff), ofp);
   putc((int)((blockpos >> 24) & 0xff), ofp);
-
+  
   /* output block data */
   for (i = 0; i < blockpos; i++)
     putc(blockbuf[i], ofp);
-
+  
   /* mark block buffer empty and uninitialized */
   blockpos =  -1;
 }
@@ -302,7 +302,7 @@ static void eexec_start()
     output_block();
     blocktyp = BINARY;
   }
-
+  
   in_eexec = 1;
   ever_eexec = 1;
   er = 55665;
@@ -816,7 +816,7 @@ particular purpose.\n");
       parse_charstring();
     }
   }
-
+  
   /* Handle remaining PostScript after the eexec section */
   if (in_eexec)
     eexec_end();
