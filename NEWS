@@ -1,5 +1,13 @@
 T1utils NEWS
 
+Version 1.21   9.Feb.2001
+
+* t1ascii, t1asm, t1unmac: Raised minimum PFA line length to 8. The Adobe
+  spec may imply that there cannot be whitespace within the first 8 bytes
+  of an ASCII-encoded eexec section; it's somewhat ambiguous. Reported by
+  Rainer Menzner <Rainer.Menzner@neuroinformatik.ruhr-uni-bochum.de>.
+
+
 Version 1.20   22.Jun.2000
 
 * t1asm: Fixed bug where `t1asm -a' would give a `warning: line length

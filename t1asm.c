@@ -692,8 +692,8 @@ particular purpose.\n");
   if (!pfb) {
     if (blocklen == -1)
       blocklen = 64;
-    else if (blocklen < 4) {
-      blocklen = 4;
+    else if (blocklen < 8) {
+      blocklen = 8;
       error("warning: line length raised to %d", blocklen);
     } else if (blocklen > 1024) {
       blocklen = 1024;
