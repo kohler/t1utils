@@ -1,5 +1,11 @@
 T1utils NEWS
 
+Version 1.29   6.Oct.2003
+
+* t1disasm: Support odd fonts where a character is defined on the
+  "/CharStrings" line. Reported by Werner Lemberg.
+
+
 Version 1.28   7.Aug.2003
 
 * Address build problems reported by Nelson H.F. Beebe.

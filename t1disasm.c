@@ -355,14 +355,19 @@ eexec_line(unsigned char *line, int line_len)
   /* Look for charstring start */
   
   /* skip first word */
-  for (pos = 0; pos < line_len && isspace(line[pos]); pos++) ;
-  while (pos < line_len && !isspace(line[pos])) pos++;
-  if (pos >= line_len) goto not_charstring;
+  for (pos = 0; pos < line_len && isspace(line[pos]); pos++)
+      ;
+  while (pos < line_len && !isspace(line[pos]))
+      pos++;
+  if (pos >= line_len)
+      goto not_charstring;
   
   /* skip spaces */
   first_space = pos;
-  while (pos < line_len && isspace(line[pos])) pos++;
-  if (pos >= line_len || !isdigit(line[pos])) goto not_charstring;
+  while (pos < line_len && isspace(line[pos]))
+      pos++;
+  if (pos >= line_len || !isdigit(line[pos]))
+      goto not_charstring;
 
   /* skip number */
   digits = pos;
@@ -405,6 +410,22 @@ eexec_line(unsigned char *line, int line_len)
   
   /* otherwise, just output the line */
  not_charstring:
+  /* 6.Oct.2003 - Werner Lemberg reports a stupid Omega font that behaves
+       badly: a charstring definition follows "/Charstrings ... begin", ON THE
+       SAME LINE. */
+  {
+      const char *CharStrings = (const char *) strstr((const char *)line, "/CharStrings ");
+      int crap, n;
+      char should_be_slash = 0;
+      if (CharStrings
+	  && sscanf(CharStrings + 12, " %d dict dup begin %c%n", &crap, &should_be_slash, &n) >= 2
+	  && should_be_slash == '/') {
+	  int len = (CharStrings + 12 + n - 1) - (const char *) line;
+	  fprintf(ofp, "%.*s\n", len, line);
+	  return eexec_line((unsigned char *) (CharStrings + 12 + n - 1), line_len - len);
+      }
+  }
+  
   if (line[line_len - 1] == '\r') {
     line[line_len - 1] = '\n';
     cut_newline = 1;
@@ -522,7 +543,8 @@ disasm_output_binary(unsigned char *data, int len)
       plain = (byte)(cipher ^ (er >> 8));
       er = (uint16_t)((cipher + er) * c1 + c2);
       data[i] = plain;
-      if (plain == '\r' || plain == '\n') break;
+      if (plain == '\r' || plain == '\n')
+	  break;
     }
     
     if (ignore_newline && start < i && data[start] == '\n') {
@@ -531,7 +553,8 @@ disasm_output_binary(unsigned char *data, int len)
     }
     
     if (i >= len) {
-      if (start < len) append_save(data + start, i - start);
+      if (start < len)
+	  append_save(data + start, i - start);
       break;
     }
     
