@@ -16,7 +16,7 @@ Version 1.11   29.May.1999
 * t1ascii and t1binary each accept both PFA and PFB fonts. If you pass an
   ASCII font (PFA) to t1ascii, it will output it mostly unchanged, and
   similarly for PFB fonts and t1binary. Both programs' `-l' options will
-  still take effect, so you can use `t1ascii -l 80' to shorten the
+  still take effect, so you can use `t1ascii -l 60' to shorten the
   encrypted line lengths of a PFA font. t1ascii also does some newline
   translation (changes carriage returns to newlines).
 
