@@ -17,12 +17,9 @@
  *
  * The 1.5 versions are maintained by eddietwo@lcs.mit.edu.
  *
- * $Log: t1disasm.c,v $
- * Revision 1.2  1998/03/27 19:27:57  eddietwo
- * change --output FIEL to --output=FILE
- *
- * Revision 1.1.1.1  1998/03/05 16:28:46  eddietwo
- * initial version
+ * Revision 1.5.2  eddietwo
+ *  * Changed "UNKNOWN_12_" to "escape_" at request of Werner Lemberg and
+ *    LEE Chun-Yu
  *
  * Revision 1.5  eddietwo
  * These changes by Eddie Kohler (eddietwo@lcs.mit.edu) not sanctioned
@@ -60,7 +57,7 @@
 
 #ifndef lint
 static char rcsid[] =
-  "@(#) $Id: t1disasm.c,v 1.2 1998/03/27 19:27:57 eddietwo Exp $";
+  "@(#) $Id: t1disasm.c,v 1.3 1998/09/02 20:16:04 eddietwo Exp $";
 static char copyright[] =
   "@(#) Copyright (c) 1992 by I. Lee Hetherington, all rights reserved.";
 #ifdef _MSDOS
@@ -550,8 +547,8 @@ static void do_charstring()
 	case 30: output_token("roll"); break;
 	case 33: output_token("setcurrentpoint"); break;
 	default:
-	  sprintf(buf, "UNKNOWN_12_%d", b);
-	 unknown++;
+	  sprintf(buf, "escape_%d", b);
+	  unknown++;
 	  output_token(buf);
 	  break;
 	}

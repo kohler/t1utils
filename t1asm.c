@@ -17,12 +17,9 @@
  *
  * The 1.5 versions are maintained by eddietwo@lcs.mit.edu.
  *
- * $Log: t1asm.c,v $
- * Revision 1.2  1998/03/27 19:27:50  eddietwo
- * change --output FIEL to --output=FILE
- *
- * Revision 1.1.1.1  1998/03/05 16:28:46  eddietwo
- * initial version
+ * Revision 1.5.2  eddietwo
+ *  * Changed "UNKNOWN_12_" to "escape_" at request of Werner Lemberg and
+ *    LEE Chun-Yu
  *
  * Revision 1.5  eddietwo
  * These changes by Eddie Kohler (eddietwo@lcs.mit.edu) not sanctioned
@@ -59,7 +56,7 @@
 
 #ifndef lint
 static char rcsid[] =
-  "@(#) $Id: t1asm.c,v 1.2 1998/03/27 19:27:50 eddietwo Exp $";
+  "@(#) $Id: t1asm.c,v 1.3 1998/09/02 20:16:03 eddietwo Exp $";
 static char copyright[] =
   "@(#) Copyright (c) 1992 by I. Lee Hetherington, all rights reserved.";
 #ifdef _MSDOS
@@ -157,6 +154,7 @@ static struct command {
   { "endchar", 14, -1 },
   { "eq", 12, 15 },
   { "error", 0, -1 },
+  { "escape", 12, -1 },
   { "exch", 12, 28 },
   { "get", 12, 21 },
   { "hhcurveto", 27, -1 },
@@ -526,42 +524,50 @@ static void parse_charstring()
     if (is_integer(line)) {
       charstring_int(atoi(line));
     } else {
+      int one;
+      int two;
+      int ok = 0;
+      
       cp = (struct command *)
 	bsearch((void *) line, (void *) command_table,
 		sizeof(command_table) / sizeof(struct command),
 		sizeof(struct command),
 		command_compare);
+      
       if (cp) {
-	charstring_byte(cp->one);
-	if (cp->two >= 0)
-	  charstring_byte(cp->two);
-	
+	one = cp->one;
+	two = cp->two;
+	ok = 1;
+
+      } else if (strncmp(line, "escape_", 7) == 0) {
+	/* Parse the `escape' keyword requested by Lee Chun-Yu and Werner
+           Lemberg */
+	one = 12;
+	if (sscanf(line + 7, "%d", &two) == 1)
+	  ok = 1;
+
       } else if (strncmp(line, "UNKNOWN_", 8) == 0) {
 	/* Allow unanticipated UNKNOWN commands. */
-	int cmd;
-	if (sscanf(line + 8, "12_%d", &cmd) == 1)
-	  cmd += 32;
-	else if (sscanf(line + 8, "%d", &cmd) == 1)
-	  /* nada */;
-	else {
-	  error("unknown charstring command `%s'", line);
-	  cmd = 0;
+	one = 12;
+	if (sscanf(line + 8, "12_%d", &two) == 1) 
+	  ok = 1;
+	else if (sscanf(line + 8, "%d", &one) == 1) {
+	  two = -1;
+	  ok = 1;
 	}
-	if (cmd < 0 || cmd > 255 + 32) {
-	  error("bad charstring command number `%d'", cmd);
-	  cmd = 0;
-	}
-	if (cmd < 32)
-	  charstring_byte(cmd);
-	else {
-	  charstring_byte(12);
-	  charstring_byte(cmd - 32);
-	}
-	
-      } else {
+      }
+
+      if (!ok)
 	error("unknown charstring command `%s'", line);
-	/* append a 0 byte to mark this command */
-	charstring_byte(0);
+      else if (one < 0 || one > 255)
+	error("bad charstring command number `%d'", one);
+      else if (two > 255)
+	error("bad charstring command number `%d'", two);
+      else if (two < 0)
+	charstring_byte(one);
+      else {
+	charstring_byte(one);
+	charstring_byte(two);
       }
     }
   }
