@@ -245,9 +245,9 @@ static void eexec_string(char *string)
    PFB format then flush current ASCII block and get ready for binary block.
    We start encryption with four random (zero) bytes. */
 
-static void eexec_start()
+static void eexec_start(char *string)
 {
-  eexec_string(line);
+  eexec_string("currentfile eexec\n");
   if (pfb && w.blocktyp != PFB_BINARY) {
     pfb_writer_output_block(&w);
     w.blocktyp = PFB_BINARY;
@@ -259,6 +259,7 @@ static void eexec_start()
   eexec_byte(0);
   eexec_byte(0);
   eexec_byte(0);
+  eexec_string(string);
 }
 
 /* 25.Aug.1999 -- Return 1 if this line actually looks like the start of a
@@ -727,15 +728,14 @@ particular purpose.\n");
     getline();
     
     if (!ever_active) {
-      if (strncmp(line, "currentfile eexec", 17) == 0) {
+      if (strncmp(line, "currentfile eexec", 17) == 0 && isspace(line[17])) {
 	/* Allow arbitrary whitespace after "currentfile eexec".
 	   Thanks to Tom Kacvinsky <tjk@ams.org> for reporting this.
 	   Note: strlen("currentfile eexec") == 17. */
-	for (p = line + 17; isspace(*p); p++) ;
-	if (!*p) {
-	  eexec_start();
-	  continue;
-	}
+	for (p = line + 18; isspace(*p); p++)
+	  ;
+	eexec_start(p);
+	continue;
       } else if (strncmp(line, "/lenIV", 6) == 0) {
 	lenIV = atoi(line + 6);
       } else if ((p = strstr(line, "string currentfile"))

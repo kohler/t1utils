@@ -10,7 +10,7 @@ extern "C" {
 #define PFB_DONE	3
 
 struct font_reader {
-  void (*output_ascii)(char *);
+  void (*output_ascii)(char *, int);
   void (*output_binary)(unsigned char *, int);
   void (*output_end)();
 };

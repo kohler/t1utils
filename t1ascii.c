@@ -136,17 +136,23 @@ Report bugs to <kohler@icir.org>.\n", program_name);
 static int hexcol = 0;
 
 static void
-pfa_output_ascii(char *data)
+pfa_output_ascii(char *data, int len)
 {
     if (hexcol) {
 	putc('\n', ofp);
 	hexcol = 0;
     }
-    if (line_length_warning == 0 && strlen(data) > 256) {
+    if (line_length_warning == 0 && len > 256) {
 	line_length_warning = 1;
-	fprintf(stderr, "%s: warning: %s has lines longer than 255 characters\n%s: warning: (This may cause problems with older printers.)\n", program_name, ifp_filename, program_name);
+	fprintf(stderr, "%s: warning: %s has lines longer than 255 characters\n%s: (This may cause problems with older printers.)\n", program_name, ifp_filename, program_name);
     }
     fputs(data, ofp);
+    if (len && data[len - 1] != '\n') {
+	int p = len - 2;
+	while (p > 0 && data[p] != '\n')
+	    p--;
+	hexcol = (p ? len - p - 1 : hexcol + len);
+    }
 }
 
 static void

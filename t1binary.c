@@ -66,14 +66,14 @@ void error(const char *message, ...);
 /* PFB font_reader functions */
 
 static void
-pfb_output_ascii(char *s)
+pfb_output_ascii(char *s, int len)
 {
-  if (w.blocktyp == PFB_BINARY) {
-    pfb_writer_output_block(&w);
-    w.blocktyp = PFB_ASCII;
-  }
-  for (; *s; s++)
-    PFB_OUTPUT_BYTE(&w, (byte)*s);
+    if (w.blocktyp == PFB_BINARY) {
+	pfb_writer_output_block(&w);
+	w.blocktyp = PFB_ASCII;
+    }
+    for (; len > 0; len--, s++)
+	PFB_OUTPUT_BYTE(&w, (byte)*s);
 }
 
 static void

@@ -453,9 +453,10 @@ all_zeroes(const char *string)
 }
 
 static void
-disasm_output_ascii(char *line)
+disasm_output_ascii(char *line, int len)
 {
   int was_in_eexec = in_eexec;
+  (void) len;			/* avoid warning */
   in_eexec = 0;
   
   /* if we just came from the "ASCII part" of an eexec section, we need to
@@ -480,7 +481,7 @@ disasm_output_ascii(char *line)
 	save[i] = 0;
 
       /* output it */
-      disasm_output_ascii((char *)(save + start));
+      disasm_output_ascii((char *)(save + start), -1);
 
       /* repair damage */
       if (i < save_len) {
@@ -514,7 +515,7 @@ disasm_output_binary(unsigned char *data, int len)
     append_save(data, len);
     return;
   }
-  
+
   /* eexec initialization */
   if (in_eexec == 0) {
     er = er_default;
@@ -573,7 +574,7 @@ disasm_output_end()
 {
     /* take care of leftover saved data */
     static char crap[1] = "";
-    disasm_output_ascii(crap);
+    disasm_output_ascii(crap, 0);
 }
 
 

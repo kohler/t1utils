@@ -356,17 +356,16 @@ t1mac_output_data(byte *s, int len)
 }
 
 static void
-t1mac_output_ascii(char *s)
+t1mac_output_ascii(char *s, int len)
 {
-  int l = strlen(s);
   if (blocktyp == POST_BINARY) {
     output_current_post();
     blocktyp = POST_ASCII;
   }
   /* Mac line endings */
-  if (l > 0 && s[l-1] == '\n')
-    s[l-1] = '\r';
-  t1mac_output_data((byte *)s, l);
+  if (len > 0 && s[len-1] == '\n')
+    s[len-1] = '\r';
+  t1mac_output_data((byte *)s, len);
   if (strncmp(s, "/FontName", 9) == 0) {
     for (s += 9; isspace(*s); s++) ;
     if (*s == '/') {
