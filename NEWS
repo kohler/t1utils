@@ -1,5 +1,10 @@
 T1utils NEWS
 
+Version 1.7.1   5.Dec.1998
+
+* The t1utils package now uses automake.
+
+
 Version 1.7   27.Nov.1998
 
 * t1asm: Should now work with fonts that have no /Subrs sections. Previously,
