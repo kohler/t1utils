@@ -1,5 +1,11 @@
 T1utils NEWS
 
+Version 1.20   22.Jun.2000
+
+* t1asm: Fixed bug where `t1asm -a' would give a `warning: line length
+  raised to 4' error message. Reported by Tom Kacvinsky <tjk@ams.org>.
+
+
 Version 1.19   3.May.2000
 
 * t1mac: Generated Macintosh fonts now use a custom-drawn icon set, rather

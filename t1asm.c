@@ -83,7 +83,7 @@ typedef unsigned char byte;
 static FILE *ifp;
 static FILE *ofp;
 static struct pfb_writer w;
-static int blocklen;
+static int blocklen = -1;
 
 /* flags */
 static int pfb = 1;
