@@ -1,10 +1,10 @@
+PACKAGE		= t1utils
+VERSION		= @VERSION@
+
 # Makefile.in for type-1 utilities (t1utils)
 #
 # author: I. Lee Hetherington (ilh@lcs.mit.edu)
 # modified by Eddie Kohler (eddietwo@mit.edu)
-
-PACKAGE		= t1utils
-VERSION		= @VERSION@
 
 .SUFFIXES:
 .SUFFIXES: .c .o
@@ -17,11 +17,8 @@ prefix		= @prefix@
 exec_prefix	= @exec_prefix@
 VPATH		= @srcdir@
 srcdir		= @srcdir@
-# Directory to install programs in.
 bindir		= @bindir@
-# Directory to install man pages in.
 mandir		= @mandir@/man$(manext)
-# Number to put on the man page filename.
 manext		= 1
 
 CC		= @CC@ $(PROFILING)
