@@ -132,7 +132,7 @@ static int hex_column = 0;	/* current column of hex ASCII output */
 static void
 output_hex_byte(FILE *fo, int b)
 {
-  static char *hex = "0123456789ABCDEF";
+  static char *hex = "0123456789abcdef";
   
   if (hex_column > 62) {	/* 64 column output */
     putc('\n', fo);

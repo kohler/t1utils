@@ -242,7 +242,7 @@ static void output_block()
 
 static void output_byte(byte b)
 {
-  static char *hexchar = "0123456789ABCDEF";
+  static char *hexchar = "0123456789abcdef";
   static int hexcol = 0;
   
   if (pfb) {

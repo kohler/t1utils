@@ -2,7 +2,7 @@ T1utils NEWS
 
 Version 1.xx
 
-* t1ascii: Use lowercase hex digits instead of uppercase.
+* t1ascii, t1asm, t1unmac: Use lowercase hex digits instead of uppercase.
 
 
 Version 1.11   29.May.1999
