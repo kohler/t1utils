@@ -4,7 +4,7 @@
  * 1 fonts stored in MacBinary (I or II), AppleSingle, AppleDouble, BinHex, or
  * raw resource fork format.
  *
- * Copyright (c) 2000-2001 by Eddie Kohler, all rights reserved.
+ * Copyright (c) 2000-2002 by Eddie Kohler, all rights reserved.
  *
  * Permission is hereby granted to use, modify, and distribute this program
  * for any purpose provided this copyright notice and the one below remain
@@ -886,7 +886,7 @@ main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("t1mac (LCDF t1utils) %s\n", VERSION);
-      printf("Copyright (C) 2000-2001 Eddie Kohler et al.\n\
+      printf("Copyright (C) 2000-2002 Eddie Kohler et al.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -934,7 +934,7 @@ particular purpose.\n");
   fr.output_end = t1mac_output_end;
 
   /* prepare resource fork file */
-  rfork_f = fopen("/tmp/rfork", "w+b");//tmpfile();
+  rfork_f = tmpfile();
   if (!rfork_f)
     fatal_error("cannot open temorary file: %s", strerror(errno));
   for (i = 0; i < RFORK_HEADERLEN; i++)

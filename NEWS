@@ -1,5 +1,11 @@
 T1utils NEWS
 
+Version 1.26   16.Apr.2002
+
+* t1mac: Fix buglet (C++ comment, and temporary file left behind). Reported
+  by Vladimir Volovich <vvv@vsu.ru>.
+
+
 Version 1.25   3.Jan.2002
 
 * t1asm: Beware extra characters after `currentfile closefile'. Reported by
