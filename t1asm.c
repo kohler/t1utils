@@ -66,6 +66,10 @@
 
 #define LINESIZE 512
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef unsigned char byte;
 
 static FILE *ifp;
@@ -597,6 +601,10 @@ Options:\n\
 \n\
 Report bugs to <kohler@icir.org>.\n", program_name);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 
 int main(int argc, char **argv)

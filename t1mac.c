@@ -30,6 +30,10 @@
 #include <lcdf/clp.h>
 #include "t1lib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef unsigned char byte;
 
 void fatal_error(const char *message, ...);
@@ -812,6 +816,10 @@ Options:\n\
 \n\
 Report bugs to <kohler@icir.org>.\n", program_name);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 
 int

@@ -50,6 +50,10 @@
 #include <lcdf/clp.h>
 #include "t1lib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static FILE *ofp;
 static int line_length = 64;
 
@@ -165,6 +169,10 @@ static void
 pfa_output_end()
 {
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 
 /*****

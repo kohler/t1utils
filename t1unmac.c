@@ -51,6 +51,10 @@
 #include <lcdf/clp.h>
 #include "t1lib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* for PFB block buffering */
 void fatal_error(const char *message, ...);
 void error(const char *message, ...);
@@ -534,6 +538,11 @@ check_binhex(FILE *f)
 
   return 0;
 }
+
+#ifdef __cplusplus
+}
+#endif
+
 
 int
 main(int argc, char **argv)

@@ -1,5 +1,10 @@
 T1utils NEWS
 
+Version 1.28   7.Aug.2003
+
+* Address build problems reported by Nelson H.F. Beebe.
+
+
 Version 1.27   26.Mar.2003
 
 * t1ascii: Add optional warning when output lines are longer than 255
