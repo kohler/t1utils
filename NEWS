@@ -1,5 +1,12 @@
 T1utils NEWS
 
+Version 1.14   25.Aug.1999
+
+* t1asm: Version 1.13 produced complete crap output. My test cases were too
+  limited to catch this. Found by Rainer Menzner
+  <Rainer.Menzner@neuroinformatik.ruhr-uni-bochum.de>.
+
+
 Version 1.13   2.Aug.1999
 
 * t1disasm: Complete rewrite. It now uses t1lib.c functions; the goal is to

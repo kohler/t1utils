@@ -312,6 +312,18 @@ static void eexec_start()
   eexec_byte(0);
 }
 
+/* 25.Aug.1999 -- Return 1 if this line actually looks like the start of a
+   charstring. We use the heuristic that it should start with `/' (a name) or
+   `dup' (a subroutine). Previous heuristic caused killa bad output. */
+
+static int check_line_charstring()
+{
+  char *p = line;
+  while (isspace(*p))
+    p++;
+  return (*p == '/' || (p[0] == 'd' && p[1] == 'u' && p[2] == 'p'));
+}
+
 /* This function returns an input line of characters. A line is terminated by
    length (including terminating null) greater than LINESIZE, \r, \n, \r\n, or
    when active (looking for charstrings) by '{'. When terminated by a newline
@@ -333,8 +345,12 @@ static void getline()
     else if (c == '%')
       comment = 1;
     else if (active && !comment && c == '{') {
-      start_charstring = 1;
-      break;
+      /* 25.Aug.1999 -- new check for whether we should stop be active */
+      if (check_line_charstring()) {
+	start_charstring = 1;
+	break;
+      } else
+	active = 0;
     }
     
     *p++ = (char) c;
@@ -351,8 +367,6 @@ static void getline()
   }
   
   *p = '\0';
-  if (active && !start_charstring && !comment)
-    active = 0;
 }
 
 /* This function wraps-up the eexec-encrypted data and writes ASCII trailer.
@@ -799,17 +813,17 @@ particular purpose.\n");
 	ever_active = active = 1;
       else if ((p = strstr(line, "/CharStrings")) && isdigit(p[13]))
 	ever_active = active = 1;
-      else if (strstr(line, "currentfile closefile")) {
-	/* 2/14/99 -- happy Valentine's day! -- don't look for `mark
-	   currentfile closefile'; the `mark' might be on a different line */
-	eexec_string(line);
-	break;
-      }
+    }
+    if (strstr(line, "currentfile closefile")) {
+      /* 2/14/99 -- happy Valentine's day! -- don't look for `mark
+	 currentfile closefile'; the `mark' might be on a different line */
+      eexec_string(line);
+      break;
     }
     
-    /* output line data */
     eexec_string(line);
     
+    /* output line data */
     if (start_charstring) {
       if (!cs_start[0])
 	fatal_error("couldn't find charstring start command");
