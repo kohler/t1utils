@@ -14,7 +14,7 @@
  * 1.5 and later versions contain changes by, and are maintained by,
  * Eddie Kohler <eddietwo@lcs.mit.edu>.
  *
- * Old change log:
+ * New change log in `NEWS'. Old change log:
  *
  * Revision 1.2  92/06/23  10:58:43  ilh
  * MSDOS porting by Kai-Uwe Herbing (herbing@netmbx.netmbx.de)
@@ -63,6 +63,7 @@ typedef long int32;
 
 static FILE *ifp;
 static FILE *ofp;
+static int line_length = 64;
 
 /* This function reads a four-byte block length. */
 
@@ -85,9 +86,9 @@ static void output_hex(int b)
 {
   static char *hexchar = "0123456789ABCDEF";
   static int hexcol = 0;
-
+  
   /* trim hexadecimal lines to 64 columns */
-  if (hexcol >= 64) {
+  if (hexcol >= line_length) {
     putc('\n', ofp);
     hexcol = 0;
   }
@@ -104,14 +105,15 @@ static void output_hex(int b)
 #define OUTPUT_OPT	301
 #define VERSION_OPT	302
 #define HELP_OPT	303
+#define LINE_LEN_OPT	304
 
 static Clp_Option options[] = {
   { "help", 0, HELP_OPT, 0, 0 },
+  { "line-length", 'l', LINE_LEN_OPT, Clp_ArgInt, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
   { "version", 0, VERSION_OPT, 0, 0 },
 };
 static char *program_name;
-
 
 void
 fatal_error(char *message, ...)
@@ -124,7 +126,6 @@ fatal_error(char *message, ...)
   exit(1);
 }
 
-
 void
 error(char *message, ...)
 {
@@ -135,7 +136,6 @@ error(char *message, ...)
   putc('\n', stderr);
 }
 
-
 void
 short_usage(void)
 {
@@ -144,21 +144,21 @@ Try `%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
-
 void
 usage(void)
 {
   printf("\
 `T1ascii' translates a PostScript Type 1 font from compact binary (PFB) to\n\
-ASCII (PFA) format. (Use t1binary to go from PFA to PFB.) Output is written to\n\
-standard out unless an OUTPUT file is given.\n\
+ASCII (PFA) format. The result is written to the standard output unless an\n\
+OUTPUT file is given.\n\
 \n\
 Usage: %s [OPTION]... [INPUT [OUTPUT]]\n\
 \n\
 Options:\n\
-  --output=FILE, -o FILE        Write output to FILE.\n\
-  --help, -h                    Print this message and exit.\n\
-  --version                     Print version number and warranty and exit.\n\
+  -l, --line-length=NUM         Set max encrypted line length (default 64).\n\
+  -o, --output=FILE             Write output to FILE.\n\
+  -h, --help                    Print this message and exit.\n\
+      --version                 Print version number and warranty and exit.\n\
 \n\
 Report bugs to <eddietwo@lcs.mit.edu>.\n", program_name);
 }
@@ -177,6 +177,17 @@ int main(int argc, char **argv)
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
+      
+     case LINE_LEN_OPT:
+      line_length = clp->val.i;
+      if (line_length < 2) {
+	line_length = 2;
+	error("warning: line length raised to %d", line_length);
+      } else if (line_length > 1024) {
+	line_length = 1024;
+	error("warning: line length lowered to %d", line_length);
+      }
+      break;
       
      output_file:
      case OUTPUT_OPT:

@@ -14,7 +14,7 @@
  * 1.5 and later versions contain changes by, and are maintained by,
  * Eddie Kohler <eddietwo@lcs.mit.edu>.
  *
- * Old change log:
+ * New change log in `NEWS'. Old change log:
  *
  * Revision 1.2  92/06/23  10:57:33  ilh
  * MSDOS porting by Kai-Uwe Herbing (herbing@netmbx.netmbx.de)
@@ -61,12 +61,14 @@ void fatal_error(char *message, ...);
 /* Some functions to read one, two, three, and four byte integers in 68000
    byte order (most significant byte first). */
 
-static int read_one(FILE *fi)
+static int
+read_one(FILE *fi)
 {
   return getc(fi);
 }
 
-static int read_two(FILE *fi)
+static int
+read_two(FILE *fi)
 {
   int val;
 
@@ -76,7 +78,8 @@ static int read_two(FILE *fi)
   return val;
 }
 
-static int32 read_three(FILE *fi)
+static int32
+read_three(FILE *fi)
 {
   int32 val;
 
@@ -87,7 +90,8 @@ static int32 read_three(FILE *fi)
   return val;
 }
 
-static int32 read_four(FILE *fi)
+static int32
+read_four(FILE *fi)
 {
   int32 val;
 
@@ -102,7 +106,8 @@ static int32 read_four(FILE *fi)
 /* Function to write four byte length to PFB file: least significant byte
    first. */
 
-static void write_pfb_length(FILE *fo, int32 len)
+static void
+write_pfb_length(FILE *fo, int32 len)
 {
   putc((int)(len & 0xff), fo);
   len >>= 8;
@@ -113,7 +118,8 @@ static void write_pfb_length(FILE *fo, int32 len)
   putc((int)(len & 0xff), fo);
 }
 
-static void reposition(FILE *fi, int32 absolute)
+static void
+reposition(FILE *fi, int32 absolute)
 {
   if (fseek(fi, absolute, 0) == -1)
     fatal_error("can't seek to position %d\n\
@@ -121,14 +127,14 @@ static void reposition(FILE *fi, int32 absolute)
 		absolute);
 }
 
-static int hex_column = 0;                        /* current column of hex */
-						  /* ASCII output */
+static int hex_column = 0;	/* current column of hex ASCII output */
 
-static void output_hex_byte(FILE *fo, int b)
+static void
+output_hex_byte(FILE *fo, int b)
 {
   static char *hex = "0123456789ABCDEF";
-
-  if (hex_column > 62) {                          /* 64 column output */
+  
+  if (hex_column > 62) {	/* 64 column output */
     putc('\n', fo);
     hex_column = 0;
   }
@@ -142,13 +148,14 @@ static void output_hex_byte(FILE *fo, int b)
    specifies resource type: 1 for ASCII, 2 for binary, and 5 for end.  The
    second byte is always zero. */
 
-static void extract_data(FILE *fi, FILE *fo, int32 offset, int binary)
+static void
+extract_data(FILE *fi, FILE *fo, int32 offset, int binary)
 {
   enum PS_type { PS_ascii = 1, PS_binary = 2, PS_end = 5 };
   static enum PS_type last_type = PS_ascii;
   int32 len, save_offset = ftell(fi);
   int c;
-
+  
   reposition(fi, offset);
   len = read_four(fi) - 2;                        /* subtract type field */
   switch ((enum PS_type)read_one(fi)) {
@@ -174,7 +181,7 @@ static void extract_data(FILE *fi, FILE *fo, int32 offset, int binary)
     }
     last_type = 1;
     break;
-  case PS_binary:
+   case PS_binary:
     (void) read_one(fi);
     if (binary) {
       putc(128, fo);
@@ -190,7 +197,7 @@ static void extract_data(FILE *fi, FILE *fo, int32 offset, int binary)
       last_type = 2;
     }
     break;
-  case PS_end:
+   case PS_end:
     (void) read_one(fi);
     if (binary) {
       putc(128, fo);
@@ -225,7 +232,6 @@ static Clp_Option options[] = {
 };
 static char *program_name;
 
-
 void
 fatal_error(char *message, ...)
 {
@@ -237,7 +243,6 @@ fatal_error(char *message, ...)
   exit(1);
 }
 
-
 void
 error(char *message, ...)
 {
@@ -248,7 +253,6 @@ error(char *message, ...)
   putc('\n', stderr);
 }
 
-
 void
 short_usage(void)
 {
@@ -257,32 +261,32 @@ Try `%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
-
 void
 usage(void)
 {
   printf("\
 `T1unmac' extracts a PostScript Type 1 font from a Macintosh resource fork\n\
-or MacBinary file. Output is written to standard out unless an OUTPUT file\n\
-is given.\n\
+or MacBinary file. The result is written to the standard output unless an\n\
+OUTPUT file is given.\n\
 \n\
 Usage: %s [OPTION]... INPUT [OUTPUT]\n\
 \n\
 Options:\n\
-  --raw, -r                     Input font is raw Macintosh resource fork.\n\
-  --macbinary                   Input font is a MacBinary file. This is the\n\
+  -r, --raw                     Input font is raw Macintosh resource fork.\n\
+      --macbinary               Input font is a MacBinary file. This is the\n\
                                 default.\n\
-  --pfa, -a                     Output font in ASCII (PFA) format.\n\
-  --pfb, -b                     Output font in binary (PFB) format. This is\n\
+  -a, --pfa                     Output font in ASCII (PFA) format.\n\
+  -b, --pfb                     Output font in binary (PFB) format. This is\n\
                                 the default.\n\
-  --output=FILE, -o FILE        Write output to FILE.\n\
-  --help, -h                    Print this message and exit.\n\
-  --version                     Print version number and warranty and exit.\n\
+  -o, --output=FILE             Write output to FILE.\n\
+  -h, --help                    Print this message and exit.\n\
+      --version                 Print version number and warranty and exit.\n\
 \n\
 Report bugs to <eddietwo@lcs.mit.edu>.\n", program_name);
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
   FILE *ifp = 0;
   FILE *ofp = 0;
@@ -299,11 +303,11 @@ int main(int argc, char **argv)
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
-
+      
      case RAW_OPT:
       raw = clp->negated ? 0 : 1;
       break;
-
+      
      case MACBINARY_OPT:
       raw = clp->negated ? 1 : 0;
       break;
@@ -319,11 +323,11 @@ int main(int argc, char **argv)
 	if (!ofp) fatal_error("%s: %s", clp->arg, strerror(errno));
       }
       break;
-
+      
      case PFB_OPT:
       binary = 1;
       break;
-
+      
      case PFA_OPT:
       binary = 0;
       break;
@@ -392,23 +396,23 @@ particular purpose.\n");
   if (raw) {
     /* raw resource file */
     res_offset = 0;
-
+    
   } else {
     /* MacBinary (I or II) file */
-
+    
     /* SHOULD CHECK INTEGRITY OF MACBINARY HEADER HERE TO VERIFY THAT WE
        REALLY HAVE A MACBINARY FILE.  MACBINARY-II-STANDARD.TXT DESCRIBES
        AN APPROPRIATE VERIFICATION PROCEDURE. */
-
+    
     /* read data and resource fork sizes in MacBinary header */
     reposition(ifp, 83);
     data_fork_size = read_four(ifp);
     (void) read_four(ifp);
-
+    
     /* round data_fork_size up to multiple of 128 */
     if (data_fork_size % 128)
       data_fork_size += 128 - data_fork_size % 128;
-
+    
     res_offset = 128 + data_fork_size;
   }
   
@@ -420,17 +424,17 @@ particular purpose.\n");
   /* read type list offset from resource map header */
   reposition(ifp, res_map_offset + 24);
   type_list_offset = res_map_offset + read_two(ifp);
-
+  
   /* read type list */
   reposition(ifp, type_list_offset);
   num_types = read_two(ifp) + 1;
-
+  
   /* find POST type */
   post_type =  (int32)('P' & 0xff) << 24;
   post_type |= (int32)('O' & 0xff) << 16;
   post_type |= (int32)('S' & 0xff) << 8;
   post_type |= (int32)('T' & 0xff);
-
+  
   while (num_types--) {
     if (read_four(ifp) == post_type) {
       num_of_type = 1 + read_two(ifp);
@@ -449,10 +453,10 @@ particular purpose.\n");
       (void) read_two(ifp);
     }
   }
-
+  
   if (num_extracted == 0)
     error("this file doesn't seem to be a Macintosh font");
-
+  
   fclose(ifp);
   fclose(ofp);
   return 0;

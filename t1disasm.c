@@ -18,7 +18,7 @@
  * 1.5 and later versions contain changes by, and are maintained by,
  * Eddie Kohler <eddietwo@lcs.mit.edu>.
  *
- * Old change log:
+ * New change log in `NEWS'. Old change log:
  * 
  * Revision 1.4  92/07/10  10:55:08  ilh
  * Added support for additional PostScript after the closefile command
@@ -80,7 +80,7 @@ typedef unsigned int uint16;
 
 #define LINESIZE 512
 
-#define cgetc()  cdecrypt((byte)(egetc() & 0xff))
+#define cgetc()		cdecrypt((byte)(egetc() & 0xff))
 
 typedef unsigned char byte;
 
@@ -95,7 +95,7 @@ static int unknown = 0;
 
 /* decryption stuff */
 static uint16 er, cr;
-static uint16 c1 = 52845, c2 = 22719;
+static uint16 c1 = 52845, c2 = 22719, cr_default = 4330;
 
 /* This function looks for `currentfile eexec' string and returns 1 once found.
    If c == 0, then simply check the status. */
@@ -281,6 +281,10 @@ static byte cdecrypt(byte cipher)
 {
   byte plain;
 
+  if (lenIV < 0)
+    /* not doing charstring decryption */
+    return cipher;
+  
   plain = (byte)(cipher ^ (cr >> 8));
   cr = (uint16)((cipher + cr) * c1 + c2);
   return plain;
@@ -371,7 +375,8 @@ static void set_lenIV()
 {
   char *p = strstr(line, "/lenIV ");
 
-  if (p && isdigit(p[7])) {
+  /* Allow lenIV to be negative. Thanks to Tom Kacvinsky <tjk@ams.org> */
+  if (p && (isdigit(p[7]) || p[7] == '+' || p[7] == '-')) {
     lenIV = atoi(p + 7);
   }
 }
@@ -442,7 +447,7 @@ static void do_charstring()
   output(line);
   output(" {\n");
 
-  cr = 4330;
+  cr = cr_default;
   for (i = 0; i < lenIV; i++, cs_len--)
     (void) cgetc();
 
@@ -583,7 +588,6 @@ static Clp_Option options[] = {
 };
 static char *program_name;
 
-
 void
 fatal_error(char *message, ...)
 {
@@ -595,7 +599,6 @@ fatal_error(char *message, ...)
   exit(1);
 }
 
-
 void
 error(char *message, ...)
 {
@@ -606,7 +609,6 @@ error(char *message, ...)
   fputc('\n', stderr);
 }
 
-
 void
 short_usage(void)
 {
@@ -615,28 +617,27 @@ Try `%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
-
 void
 usage(void)
 {
   printf("\
 `T1disasm' translates a PostScript Type 1 font in PFB or PFA format into a\n\
-human-readable, human-editable form. (Use t1asm to go from human-readable form\n\
-back to PFB or PFA.) Output is written to standard out unless an OUTPUT file\n\
-is given.\n\
+human-readable, human-editable form. The result is written to the standard\n\
+output unless an OUTPUT file is given.\n\
 \n\
 Usage: %s [OPTION]... [INPUT [OUTPUT]]\n\
 \n\
 Options:\n\
-  --output=FILE, -o FILE        Write output to FILE.\n\
-  --help, -h                    Print this message and exit.\n\
-  --version                     Print version number and warranty and exit.\n\
+  -o, --output=FILE             Write output to FILE.\n\
+  -h, --help                    Print this message and exit.\n\
+      --version                 Print version number and warranty and exit.\n\
 \n\
 Report bugs to <eddietwo@lcs.mit.edu>.\n", program_name);
 }
 
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
   Clp_Parser *clp =
     Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);

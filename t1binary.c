@@ -14,7 +14,7 @@
  * 1.5 and later versions contain changes by, and are maintained by,
  * Eddie Kohler <eddietwo@lcs.mit.edu>.
  *
- * Old change log:
+ * New change log in `NEWS'. Old change log:
  *
  * Revision 1.2  92/06/23  10:58:08  ilh
  * MSDOS porting by Kai-Uwe Herbing (herbing@netmbx.netmbx.de)
@@ -286,16 +286,16 @@ usage(void)
 {
   printf("\
 `T1binary' translates a PostScript Type 1 font from ASCII (PFA) to compact\n\
-binary (PFB) format. (Use t1ascii to go back from PFB to PFA.) Output is\n\
-written to standard out unless an OUTPUT file is given.\n\
+binary (PFB) format. The result is written to the standard output unless an\n\
+OUTPUT file is given.\n\
 \n\
 Usage: %s [OPTION]... [INPUT [OUTPUT]]\n\
 \n\
 Options:\n\
-  --block-length=NUM, -l NUM    Output blocks will have size NUM.\n\
-  --output=FILE, -o FILE        Write output to FILE.\n\
-  --help, -h                    Print this message and exit.\n\
-  --version                     Print version number and warranty and exit.\n\
+  -l, --block-length=NUM        Set max output block length.\n\
+  -o, --output=FILE             Write output to FILE.\n\
+  -h, --help                    Print this message and exit.\n\
+      --version                 Print version number and warranty and exit.\n\
 \n\
 Report bugs to <eddietwo@lcs.mit.edu>.\n", program_name);
 }

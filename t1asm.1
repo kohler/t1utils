@@ -65,16 +65,22 @@ Output in PFA (ASCII) format.
 Output in PFB (binary) format. This is the default.
 .TP
 .BI \-\-block\-length= "num\fR, " \-l " num"
-Set the maximum length of sections in PFB output to
-.I length.
+PFB only: Set the maximum output block length to
+.I num.
 The default value is large, 2**17 - 6, yielding a section size, including
 section header, of 128 Kbytes. This default value is also the maximum
 allowable length.
+.TP
+.BI \-\-line\-length= "num\fR, " \-l " num"
+PFA only: Set the maximum length of encrypted lines in the output to
+.I num.
+(These are the lines consisting wholly of hexadecimal digits.) The default
+is 64.
 .SH EXAMPLES
 .LP
 .nf
-% t1asm Utopia-Regular.raw Utopia-Regular.pfb
-% t1asm -a Utopia-Regular.raw Utopia-Regular.pfa
+% t1asm Utopia-Regular.raw > Utopia-Regular.pfb
+% t1asm -a Utopia-Regular.raw > Utopia-Regular.pfa
 .fi
 .SH "SEE ALSO"
 .LP
@@ -84,13 +90,13 @@ allowable length.
 .BR t1unmac (1)
 .LP
 .I "Adobe Type 1 Font Format"
-is available free from Adobe as a PDF file:
+is available free from Adobe as a PDF file.
 http://www.adobe.com/supportservice/devrelations/PDFS/TN/T1_SPEC.PDF
 .LP
 .I "The Type 2 Charstring Format,"
 also available from Adobe as a PDF file, describes the newer Type 2
 operators, which are also used in some multiple-master Type 1 fonts like
-Adobe Jenson and Kepler:
+Adobe Jenson and Kepler.
 http://www.adobe.com/supportservice/devrelations/PDFS/TN/5177.Type2.pdf
 '
 .SH AUTHORS

@@ -1,5 +1,17 @@
 T1utils NEWS
 
+Version 1.10   11.Apr.1999
+
+* t1asm/t1disasm: Provide support for Type1C (Compact Font Format) font
+  files. These fonts have unencrypted character strings, signalled by a
+  negative lenIV value. Suggestion and patch thanks to Tom Kacvinsky
+  <tjk@ams.org>.
+
+* t1ascii/t1asm: Added `-l/--line-length' option to control maximum
+  encrypted line length. Suggestion thanks to Giuseppe Ghibò
+  <ghibo@caesar.polito.it>.
+
+
 Version 1.9   14.Feb.1999
 
 * t1asm/t1disasm: Be more robust on fonts that don't end in `mark

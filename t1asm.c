@@ -18,7 +18,7 @@
  * 1.5 and later versions contain changes by, and are maintained by,
  * Eddie Kohler <eddietwo@lcs.mit.edu>.
  *
- * Old change log:
+ * New change log in `NEWS'. Old change log:
  *
  * Revision 1.4  92/07/10  10:53:09  ilh
  * Added support for additional PostScript after the closefile command
@@ -111,7 +111,7 @@ static byte *charstring_bp;
 
 /* for PFB block buffering */
 static byte blockbuf[MAXBLOCKLEN];
-static int32 blocklen = MAXBLOCKLEN;
+static int32 blocklen = -1;
 static int32 blockpos = -1;
 static int blocktyp = ASCII;
 
@@ -206,6 +206,10 @@ static byte eencrypt(byte plain)
 static byte cencrypt(byte plain)
 {
   byte cipher;
+  
+  /* Thanks to Tom Kacvinsky <tjk@ams.org> who reported that lenIV == -1 means
+     unencrypted charstrings. */
+  if (lenIV < 0) return plain;
 
   cipher = (byte)(plain ^ (cr >> 8));
   cr = (uint16)((cipher + cr) * c1 + c2);
@@ -254,8 +258,8 @@ static void output_byte(byte b)
   } else {
     /* PFA */
     if (in_eexec) {
-      /* trim hexadecimal lines to 64 columns */
-      if (hexcol >= 64) {
+      /* trim hexadecimal lines to `blocklen' columns */
+      if (hexcol >= blocklen) {
 	putc('\n', ofp);
 	hexcol = 0;
       }
@@ -585,14 +589,13 @@ static void parse_charstring()
 static Clp_Option options[] = {
   { "block-length", 'l', BLOCK_LEN_OPT, Clp_ArgInt, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
-  { "length", 0, BLOCK_LEN_OPT, Clp_ArgInt, 0 },
+  { "line-length", 0, BLOCK_LEN_OPT, Clp_ArgInt, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
   { "pfa", 'a', PFA_OPT, 0, 0 },
   { "pfb", 'b', PFB_OPT, 0, 0 },
   { "version", 0, VERSION_OPT, 0, 0 },
 };
 static char *program_name;
-
 
 void
 fatal_error(char *message, ...)
@@ -605,7 +608,6 @@ fatal_error(char *message, ...)
   exit(1);
 }
 
-
 void
 error(char *message, ...)
 {
@@ -616,7 +618,6 @@ error(char *message, ...)
   putc('\n', stderr);
 }
 
-
 void
 short_usage(void)
 {
@@ -625,26 +626,25 @@ Try `%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
-
 void
 usage(void)
 {
   printf("\
 `T1asm' translates a human-readable version of a PostScript Type 1 font into\n\
-standard PFB or PFA format. (Use t1disasm to go from PFB or PFA to human-\n\
-readable form.) Output is written to standard out unless an OUTPUT file is\n\
-given.\n\
+standard PFB or PFA format. The result is written to the standard output\n\
+unless an OUTPUT file is given.\n\
 \n\
 Usage: %s [OPTION]... [INPUT [OUTPUT]]\n\
 \n\
 Options:\n\
-  --pfa, -a                     Output font in ASCII (PFA) format.\n\
-  --pfb, -b                     Output font in binary (PFB) format. This is\n\
-                                the default.\n\
-  --block-length=NUM, -l NUM    Output PFB blocks will have size NUM.\n\
-  --output=FILE, -o FILE        Write output to FILE.\n\
-  --help, -h                    Print this message and exit.\n\
-  --version                     Print version number and warranty and exit.\n\
+  -a, --pfa                   Output font in ASCII (PFA) format.\n\
+  -b, --pfb                   Output font in binary (PFB) format. This is\n\
+                              the default.\n\
+  -l, --block-length=NUM      Set output max block length (PFB only).\n\
+  -l, --line-length=NUM       Set output max encrypted line length (PFA only).\n\
+  -o, --output=FILE           Write output to FILE.\n\
+  -h, --help                  Print this message and exit.\n\
+      --version               Print version number and warranty and exit.\n\
 \n\
 Report bugs to <eddietwo@lcs.mit.edu>.\n", program_name);
 }
@@ -665,14 +665,6 @@ int main(int argc, char **argv)
       
      case BLOCK_LEN_OPT:
       blocklen = clp->val.i;
-      pfb = 1;
-      if (blocklen < MINBLOCKLEN) {
-	blocklen = MINBLOCKLEN;
-	error("warning: block length raised to %d", blocklen);
-      } else if (blocklen > MAXBLOCKLEN) {
-	blocklen = MAXBLOCKLEN;
-	error("warning: block length lowered to %d", blocklen);
-      }
       break;
       
      output_file:
@@ -734,6 +726,28 @@ particular purpose.\n");
   }
   
  done:
+  if (pfb) {
+    if (blocklen < -1)
+      blocklen = MAXBLOCKLEN;
+    else if (blocklen < MINBLOCKLEN) {
+      blocklen = MINBLOCKLEN;
+      error("warning: block length raised to %d", blocklen);
+    } else if (blocklen > MAXBLOCKLEN) {
+      blocklen = MAXBLOCKLEN;
+      error("warning: block length lowered to %d", blocklen);
+    }
+  } else {
+    if (blocklen < -1)
+      blocklen = 64;
+    else if (blocklen < 2) {
+      blocklen = 2;
+      error("warning: line length raised to %d", blocklen);
+    } else if (blocklen > 1024) {
+      blocklen = 1024;
+      error("warning: line length lowered to %d", blocklen);
+    }
+  }
+  
   if (!ifp) ifp = stdin;
   if (!ofp) ofp = stdout;
   
