@@ -298,7 +298,7 @@ main(int argc, char **argv)
   int32 data_fork_size;
   int32 res_offset, res_data_offset, res_map_offset, type_list_offset;
   int32 post_type;
-  int num_types, num_of_type, num_extracted = 0, binary = 0, raw = 0;
+  int num_types, num_of_type, num_extracted = 0, binary = 1, raw = 0;
   
   Clp_Parser *clp =
     Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
