@@ -17,62 +17,33 @@ dnl strerror()? inttypes.h?
 dnl
 
 AC_REPLACE_FUNCS(strerror)
-AC_CHECK_HEADERS(inttypes.h)
+AC_CHECK_HEADERS(inttypes.h, have_inttypes_h=yes, have_inttypes_h=no)
 
 dnl
 dnl Integer typedefs
 dnl
 
-AC_CACHE_CHECK(for integer typedefs, ac_cv_int_types,
-[AC_EGREP_HEADER(uint32_t, sys/types.h, ac_cv_int_types=yes,
-  AC_EGREP_HEADER(u_int32_t, sys/types.h, ac_cv_int_types=close,
-   ac_cv_int_types=no))])
-
-if test "$ac_cv_int_types" = no ;
-then
-  # Define our own versions
-  AC_CACHE_CHECK(for a 16-bit value, ac_cv_int16,
-  [AC_TRY_RUN([#include <stdio.h>
-#include <stdlib.h>
-int main(int argc, char **argv) {
-  FILE *f = fopen("conftestval", "w");
-  if (!f) exit(1);
-  if (sizeof(short) == 2) fprintf(f, "short\n");
-  else exit(1);
-  fclose(f);
-  exit(0);
-}], ac_cv_int16=`cat conftestval`,
-  AC_MSG_ERROR(no 16-bit value found),
-  ac_cv_int16=short)])
-
-  AC_CACHE_CHECK(for a 32-bit value, ac_cv_int32,
-  [AC_TRY_RUN([#include <stdio.h>
-#include <stdlib.h>
-int main(int argc, char **argv) {
-  FILE *f = fopen("conftestval", "w");
-  if (!f) exit(1);
-  if (sizeof(int) == 4) fprintf(f, "int\n");
-  else if (sizeof(long) == 4) fprintf(f, "long\n");
-  else exit(1);
-  fclose(f);
-  exit(0);
-}], ac_cv_int32=`cat conftestval`, 
-  AC_MSG_ERROR(no 32-bit value found),
-  ac_cv_int32=int)])
+if test "$have_inttypes_h" = no; then
+    AC_CACHE_CHECK(for integer typedefs, ac_cv_int_types,
+	[AC_EGREP_HEADER(uint32_t, sys/types.h, ac_cv_int_types=yes,
+	  AC_EGREP_HEADER(u_int32_t, sys/types.h, ac_cv_int_types=close,
+	    ac_cv_int_types=no))])
 fi
 
-if test "$ac_cv_header_inttypes_h" = yes; then
-  :
-elif test "$ac_cv_int_types" = no; then
-  AC_DEFINE_UNQUOTED(uint16_t, unsigned $ac_cv_int16)
-  AC_DEFINE_UNQUOTED(uint32_t, unsigned $ac_cv_int32)
-  AC_DEFINE_UNQUOTED(int32_t, $ac_cv_int32)
+if test "$have_inttypes_h" = yes; then
+    :
+elif test "$ac_cv_int_types" = yes; then
+    AC_DEFINE(NEED_SYS_TYPES_H)
 elif test "$ac_cv_int_types" = close; then
-  AC_DEFINE(NEED_SYS_TYPES_H)
-  AC_DEFINE(uint16_t, u_int16_t)
-  AC_DEFINE(uint32_t, u_int32_t)
+    AC_DEFINE(NEED_SYS_TYPES_H)
+    AC_DEFINE(HAVE_U_INT_TYPES)
 else
-  AC_DEFINE(NEED_SYS_TYPES_H)
+    AC_MSG_ERROR([
+==============================================
+
+Neither uint32_t nor u_int32_t defined by <inttypes.h> or <sys/types.h>!
+
+==============================================])
 fi
 
 dnl
