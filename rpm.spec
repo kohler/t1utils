@@ -40,7 +40,7 @@ rm -rf $RPM_BUILD_ROOT
 %post
 
 %files
-%doc NEWS README
+%attr(-,root,root) %doc NEWS README
 %attr(0755,root,root) /usr/bin/t1ascii
 %attr(0755,root,root) /usr/bin/t1binary
 %attr(0755,root,root) /usr/bin/t1asm
