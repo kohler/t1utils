@@ -18,6 +18,9 @@
 #include <string.h>
 #include "t1lib.h"
 #define LINESIZE 512
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* This function returns the value (0-15) of a single hex digit.  It returns
    0 for an invalid hex digit. */
@@ -193,3 +196,7 @@ process_pfb(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
 	  ifp_filename, filepos - 2);
   fr->output_end();
 }
+
+#ifdef __cplusplus
+}
+#endif
