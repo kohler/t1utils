@@ -48,6 +48,7 @@
 #include <stdarg.h>
 #include <errno.h>
 #include "clp.h"
+#include "t1lib.h"
 
 /* int32 must be at least 32-bit */
 #if INT_MAX >= 0x7FFFFFFFUL
@@ -56,45 +57,49 @@ typedef int int32;
 typedef long int32;
 #endif
 
-#define MARKER   128
-#define ASCII    1
-#define BINARY   2
-#define DONE     3
-
-static FILE *ifp;
 static FILE *ofp;
 static int line_length = 64;
 
-/* This function reads a four-byte block length. */
 
-static int32 read_length()
+/* PFA font_reader functions */
+
+static int hexcol = 0;
+
+static void
+pfa_output_ascii(char *data)
 {
-  int32 length;
-
-  length = (int32)(getc(ifp) & 0xff);
-  length |= (int32)(getc(ifp) & 0xff) << 8;
-  length |= (int32)(getc(ifp) & 0xff) << 16;
-  length |= (int32)(getc(ifp) & 0xff) << 24;
-
-  return length;
-}
-
-/* This function outputs a single byte in hexadecimal.  It limits hexadecimal
-   output to 64 columns. */
-
-static void output_hex(int b)
-{
-  static char *hexchar = "0123456789ABCDEF";
-  static int hexcol = 0;
-  
-  /* trim hexadecimal lines to 64 columns */
-  if (hexcol >= line_length) {
+  if (hexcol) {
     putc('\n', ofp);
     hexcol = 0;
   }
-  putc(hexchar[(b >> 4) & 0xf], ofp);
-  putc(hexchar[b & 0xf], ofp);
-  hexcol += 2;
+  for (; *data; data++) {
+    if (*data == '\r') {
+      putc('\n', ofp);
+      if (data[1] == '\n') data++;
+    } else
+      putc(*data, ofp);
+  }
+}
+
+static void
+pfa_output_binary(char *data, int len)
+{
+  static char *hexchar = "0123456789ABCDEF";
+  for (; len > 0; len--, data++) {
+    /* trim hexadecimal lines to line_length columns */
+    if (hexcol >= line_length) {
+      putc('\n', ofp);
+      hexcol = 0;
+    }
+    putc(hexchar[(*data >> 4) & 0xf], ofp);
+    putc(hexchar[*data & 0xf], ofp);
+    hexcol += 2;
+  }
+}
+
+static void
+pfa_output_end()
+{
 }
 
 
@@ -164,10 +169,13 @@ Report bugs to <eddietwo@lcs.mit.edu>.\n", program_name);
 }
 
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
-  int32 length;
-  int c, block = 1, last_type = ASCII;
+  struct font_reader fr;
+  int c;
+  FILE *ifp = 0;
+  const char *ifp_filename = "<stdin>";
   
   Clp_Parser *clp =
     Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
@@ -223,6 +231,7 @@ particular purpose.\n");
       if (strcmp(clp->arg, "-") == 0)
 	ifp = stdin;
       else {
+	ifp_filename = clp->arg;
 	ifp = fopen(clp->arg, "r");
 	if (!ifp) fatal_error("%s: %s", clp->arg, strerror(errno));
       }
@@ -249,46 +258,24 @@ particular purpose.\n");
   _setmode(_fileno(ifp), _O_BINARY);
 #endif
   
-  /* main loop through blocks */
+  /* prepare font reader */
+  fr.output_ascii = pfa_output_ascii;
+  fr.output_binary = pfa_output_binary;
+  fr.output_end = pfa_output_end;
   
-  for (;;) {
-    c = getc(ifp);
-    if (c == EOF) {
-      break;
-    }
-    if (c != MARKER) {
-      if (block == 1)
-	fatal_error("this file doesn't seem to be a PFB");
-      else
-	fatal_error("corrupt PFB: marker missing before block %d", block);
-    }
-    switch (c = getc(ifp)) {
-    case ASCII:
-      if (last_type != ASCII)
-	putc('\n', ofp);
-      last_type = ASCII;
-      for (length = read_length(); length > 0; length--)
-	if ((c = getc(ifp)) == '\r')
-	  putc('\n', ofp);
-	else
-	  putc(c, ofp);
-      break;
-    case BINARY:
-      last_type = BINARY;
-      for (length = read_length(); length > 0; length--)
-	output_hex(getc(ifp));
-      break;
-    case DONE:
-      /* nothing to be done --- will exit at top of loop with EOF */
-      break;
-    default:
-      fatal_error("corrupt PFB: bad block type `%d'", c);
-      break;
-    }
-    block++;
-  }
+  /* peek at first byte to see if it is the PFB marker 0x80 */
+  c = getc(ifp);
+  ungetc(c, ifp);
+  
+  /* do the file */
+  if (c == MARKER)
+    process_pfb(ifp, ifp_filename, &fr);
+  else if (c == '%')
+    process_pfa(ifp, ifp_filename, &fr);
+  else
+    fatal_error("%s does not start with font marker (`%' or 0x80)");
+  
   fclose(ifp);
   fclose(ofp);
-
   return 0;
 }

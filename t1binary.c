@@ -48,183 +48,134 @@
 #include <stdarg.h>
 #include <errno.h>
 #include "clp.h"
+#include "t1lib.h"
 
 /* int32 must be at least 32-bit */
 #if INT_MAX >= 0x7FFFFFFFUL
 typedef int int32;
+typedef unsigned int uint32;
 #else
 typedef long int32;
+typedef unsigned long uint32;
 #endif
 
-#define MAXBLOCKLEN ((1L<<17)-6)
-#define MINBLOCKLEN ((1L<<8)-6)
-
-#define MARKER   128
-#define ASCII    1
-#define BINARY   2
-#define DONE     3
+#define MAXBLOCKLEN (1L<<17)
+#define DEFAULT_BLOCKLEN (1L<<12)
 
 typedef unsigned char byte;
 
-static FILE *ifp;
 static FILE *ofp;
 
 /* for PFB block buffering */
-static byte blockbuf[MAXBLOCKLEN];
-static int32 blocklen = MAXBLOCKLEN;
-static int32 blockpos = -1;
+static byte *blockbuf = 0;
+static uint32 blocklen = 0;
+static uint32 max_blocklen = 0xFFFFFFFFUL;
+static uint32 blockpos = 0;
 static int blocktyp = ASCII;
 
 static int binary_blocks_written = 0;
 
+void fatal_error(char *message, ...);
+void error(char *message, ...);
+
+
 /* This function flushes a buffered PFB block. */
 
-static void output_block()
+static void pfb_output_block()
 {
-  int32 i;
-
+  /* do nothing if nothing in block */
+  if (blockpos == 0)
+    return;
+  
   /* output four-byte block length */
+  putc(MARKER, ofp);
+  putc(blocktyp, ofp);
   putc((int)(blockpos & 0xff), ofp);
   putc((int)((blockpos >> 8) & 0xff), ofp);
   putc((int)((blockpos >> 16) & 0xff), ofp);
   putc((int)((blockpos >> 24) & 0xff), ofp);
-
+  
   /* output block data */
-  for (i = 0; i < blockpos; i++)
-    putc(blockbuf[i], ofp);
-
+  fwrite(blockbuf, 1, blockpos, ofp);
+  
   /* mark block buffer empty and uninitialized */
-  blockpos =  -1;
+  blockpos =  0;
   if (blocktyp == BINARY)
     binary_blocks_written++;
+}
+
+static void
+pfb_grow_block(void)
+{
+  if (!blockbuf) {
+    /* first time through: allocate blockbuf */
+    blocklen = DEFAULT_BLOCKLEN;
+    blockbuf = (byte *)malloc(blocklen);
+    if (!blockbuf)
+      fatal_error("out of memory");
+    
+  } else if (blocklen < max_blocklen) {
+    /* later: grow blockbuf */
+    int new_blocklen = blocklen * 2;
+    byte *new_blockbuf;
+    if (new_blocklen > max_blocklen)
+      new_blocklen = max_blocklen;
+    new_blockbuf = (byte *)malloc(new_blocklen);
+    if (!new_blockbuf) {
+      error("out of memory; muddling on with a smaller block size");
+      max_blocklen = blocklen;
+      pfb_output_block();
+    } else {
+      memcpy(new_blockbuf, blockbuf, blocklen);
+      free(blockbuf);
+      blockbuf = new_blockbuf;
+      blocklen = new_blocklen;
+    }
+    
+  } else
+    /* blockbuf already the right size, just output the block */
+    pfb_output_block();
 }
 
 /* This function outputs a single byte.  If output is in PFB format then output
    is buffered through blockbuf[].  If output is in PFA format, then output
    will be hexadecimal if in_eexec is set, ASCII otherwise. */
 
-static void output_byte(byte b)
+static void pfb_output_byte(byte b)
 {
-  if (blockpos < 0) {
-    putc(MARKER, ofp);
-    putc(blocktyp, ofp);
-    blockpos = 0;
-  }
-  blockbuf[blockpos++] = b;
   if (blockpos == blocklen)
-    output_block();
+    pfb_grow_block();
+  blockbuf[blockpos++] = b;
 }
 
-/* This function outputs a null-terminated string through the PFB buffering. */
+/* PFB font_reader functions */
 
-static void output_string(char *string)
+static void
+pfb_output_ascii(char *s)
 {
-  while (*string)
-    output_byte((byte) *string++);
-}
-
-/* This function returns the value (0-15) of a single hex digit.  It returns
-   0 for an invalid hex digit. */
-
-static int hexval(char c)
-{
-  if (c >= 'A' && c <= 'F')
-    return c - 'A' + 10;
-  else if (c >= 'a' && c <= 'f')
-    return c - 'a' + 10;
-  else if (c >= '0' && c <= '9')
-    return c - '0';
-  else
-    return 0;
-}
-
-/* This function outputs the binary data associated with a string of
-   hexadecimal digits.  We allow an odd number of digits. */
-
-static void output_hex_string(char *string)
-{
-  static char saved_orphan = 0;
-  if (saved_orphan && string[0] && string[0] != '\n') {
-    output_byte((byte)((hexval(saved_orphan) << 4) + hexval(string[0])));
-    string++;
-    saved_orphan = 0;
-  }
-  while (string[0] && string[0] != '\n') {
-    if (!string[1]) {
-      saved_orphan = string[0];
-      return;
-    }
-    output_byte((byte)((hexval(string[0]) << 4) + hexval(string[1])));
-    string += 2;
-  }
-}
-
-/* This function returns 1 if the string contains all '0's. */
-
-static int all_zeroes(char *string)
-{
-  while (*string == '0')
-    string++;
-  return *string == '\0' || *string == '\n';
-}
-
-/* This function handles a single line, which should be terminated by \n\0. */
-
-static void handle_line(char *line)
-{
-  if (blocktyp == ASCII && strcmp(line, "currentfile eexec\n") == 0) {
-    output_string(line);
-    output_block();
-    blocktyp = BINARY;
-  } else if (blocktyp == BINARY && all_zeroes(line)) {
-    output_block();
+  if (blocktyp == BINARY) {
+    pfb_output_block();
     blocktyp = ASCII;
-    output_string(line);
-  } else if (blocktyp == ASCII) {
-    output_string(line);
-  } else {
-    output_hex_string(line);
   }
+  for (; *s; s++)
+    pfb_output_byte((byte)*s);
 }
 
-/* This function handles the entire file. */
-#define LINESIZE 512
-
-static void process(FILE *ifp, FILE *ofp)
+static void
+pfb_output_binary(char *s, int len)
 {
-  /* Finally, we loop until no more input.  We need to look for `currentfile
-     eexec' to start eexec section (hex to binary conversion) and line of all
-     zeros to switch back to ASCII. */
-  
-  /* Don't use fgets() in case line-endings are indicated by bare \r's, as
-     occurs in Macintosh fonts. */
-  
-  char line[LINESIZE];
-  int c = 0;
-  while (c != EOF) {
-    char *p = line;
-    c = getc(ifp);
-    while (c != EOF && c != '\r' && c != '\n' && p < line + LINESIZE - 1) {
-      *p++ = c;
-      c = getc(ifp);
-    }
-
-    /* handle the end of the line */
-    if (p == line + LINESIZE - 1)
-      /* buffer overrun: don't append newline even if we have it */
-      ungetc(c, ifp);
-    else if (c == '\r') {
-      /* change CR or CR/LF into LF */
-      c = getc(ifp);
-      if (c != '\n') ungetc(c, ifp);
-      *p++ = '\n';
-    } else if (c == '\n')
-      *p++ = '\n';
-    
-    *p = 0;
-    handle_line(line);
+  if (blocktyp == ASCII) {
+    pfb_output_block();
+    blocktyp = BINARY;
   }
-  output_block();
+  for (; len > 0; len--, s++)
+    pfb_output_byte((byte)*s);
+}
+
+static void
+pfb_output_end()
+{
+  pfb_output_block();
   putc(MARKER, ofp);
   putc(DONE, ofp);
 }
@@ -304,6 +255,9 @@ Report bugs to <eddietwo@lcs.mit.edu>.\n", program_name);
 int main(int argc, char **argv)
 {
   int c;
+  FILE *ifp = 0;
+  const char *ifp_filename = "<stdin>";
+  struct font_reader fr;
   
   Clp_Parser *clp =
     Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
@@ -315,13 +269,10 @@ int main(int argc, char **argv)
     switch (opt) {
       
      case BLOCK_LEN_OPT:
-      blocklen = clp->val.i;
-      if (blocklen < MINBLOCKLEN) {
-	blocklen = MINBLOCKLEN;
-	error("warning: block length raised to %d", blocklen);
-      } else if (blocklen > MAXBLOCKLEN) {
-	blocklen = MAXBLOCKLEN;
-	error("warning: block length lowered to %d", blocklen);
+      max_blocklen = clp->val.i;
+      if (max_blocklen <= 0) {
+	max_blocklen = 1;
+	error("warning: block length raised to %d", max_blocklen);
       }
       break;
       
@@ -359,6 +310,7 @@ particular purpose.\n");
       if (strcmp(clp->arg, "-") == 0)
 	ifp = stdin;
       else {
+	ifp_filename = clp->arg;
 	ifp = fopen(clp->arg, "r");
 	if (!ifp) fatal_error("%s: %s", clp->arg, strerror(errno));
       }
@@ -374,7 +326,7 @@ particular purpose.\n");
       
     }
   }
-
+  
  done:
   if (!ifp) ifp = stdin;
   if (!ofp) ofp = stdout;
@@ -384,27 +336,29 @@ particular purpose.\n");
   /* file, we must set its file mode to binary. */
   _setmode(_fileno(ofp), _O_BINARY);
 #endif
-
+  
+  /* prepare font reader */
+  fr.output_ascii = pfb_output_ascii;
+  fr.output_binary = pfb_output_binary;
+  fr.output_end = pfb_output_end;
+  
   /* peek at first byte to see if it is the PFB marker 0x80 */
   c = getc(ifp);
-  if (c == MARKER) {
-    fprintf(stderr,
-	    "error: input may already be binary (starts with 0x80)\n");
-    exit(1);
-  }
   ungetc(c, ifp);
-
+  
   /* do the file */
-  process(ifp, ofp);
+  if (c == MARKER)
+    process_pfb(ifp, ifp_filename, &fr);
+  else if (c == '%')
+    process_pfa(ifp, ifp_filename, &fr);
+  else
+    fatal_error("%s does not start with font marker (`%' or 0x80)");
   
   fclose(ifp);
   fclose(ofp);
   
-  if (!binary_blocks_written) {
-    fprintf(stderr, "error: no binary blocks written! \
-Are you sure this was a font?\n");
-    exit(1);
-  }
+  if (!binary_blocks_written)
+    fatal_error("no binary blocks written! Are you sure this was a font?");
   
   return 0;
 }

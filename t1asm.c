@@ -786,7 +786,8 @@ particular purpose.\n");
 	ever_active = active = 1;
       } else if ((p = strstr(line, "/CharStrings")) && isdigit(p[13])) {
 	ever_active = active = 1;
-      } else if ((p = strstr(line, "string currentfile"))) {
+      } else if ((p = strstr(line, "string currentfile"))
+		 && strstr(line, "readstring")) { /* enforce `readstring' */
 	/* locate the name of the charstring start command */
 	*p = '\0';                                  /* damage line[] */
 	q = strrchr(line, '/');

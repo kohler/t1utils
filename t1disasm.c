@@ -386,6 +386,11 @@ static void set_cs_start()
   char *p, *q, *r;
 
   if ((p = strstr(line, "string currentfile"))) {
+    /* enforce presence of `readstring' -- 5/29/99 */
+    if (!strstr(line, "readstring")) {
+      fprintf(stderr, "skipping\n");
+      return;
+    }
     /* locate the name of the charstring start command */
     *p = '\0';					  /* damage line[] */
     q = strrchr(line, '/');
@@ -710,16 +715,17 @@ particular purpose.\n");
     egetline();
     if (line[0] == '\0')
       break;
-    set_lenIV();
-    if (!*cs_start) set_cs_start();
     if (start_charstring)
       do_charstring();
-    else
+    else {
+      set_lenIV();
+      set_cs_start();
       output(line);
-    /* 2/14/99 -- happy Valentine's day! -- don't look for `mark currentfile
-       closefile'; the `mark' might be on a different line */
-    if (strstr(line, "currentfile closefile") != 0)
-      break;
+      /* 2/14/99 -- happy Valentine's day! -- don't look for `mark currentfile
+	 closefile'; the `mark' might be on a different line */
+      if (strstr(line, "currentfile closefile") != 0)
+	break;
+    }
   }
   
   /* Final wrap-up: skip lines containing all zeros */

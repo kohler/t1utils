@@ -1,5 +1,18 @@
 T1utils NEWS
 
+Version 1.11   29.May.1999
+
+* t1ascii and t1binary each accept both PFA and PFB fonts. If you pass an
+  ASCII font (PFA) to t1ascii, it will output it mostly unchanged, and
+  similarly for PFB fonts and t1binary. Both programs' `-l' options will
+  still take effect, so you can use `t1ascii -l 80' to shorten the
+  encrypted line lengths of a PFA font. t1ascii also does some newline
+  translation (changes carriage returns to newlines).
+
+* Bug fix in t1disasm: some fonts were not being disassembled correctly.
+  Caught by Luc Devroye <luc@CS.McGill.CA>.
+
+
 Version 1.10.1   12.Apr.1999
 
 * t1asm: Fixed bug when `-l' option wasn't provided. Caught by Giuseppe
