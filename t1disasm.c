@@ -710,7 +710,6 @@ particular purpose.\n");
   /* main loop---normally done when reach `mark currentfile closefile' on
      output (rest is garbage). */
   
-  *cs_start = 0;
   while (1) {
     egetline();
     if (line[0] == '\0')

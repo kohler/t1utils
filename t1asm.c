@@ -338,7 +338,7 @@ static void getline()
     }
     
     *p++ = (char) c;
-
+    
     /* end of line processing: change CR or CRLF into LF, and exit */
     if (c == '\r') {
       c = getc(ifp);
