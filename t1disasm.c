@@ -84,8 +84,7 @@ static uint16_t cr_default = 4330;
 static uint16_t er_default = 55665;
 
 static int error_count = 0;
-void fatal_error(const char *message, ...);
-void error(const char *message, ...);
+
 
 /* If the line contains an entry of the form `/lenIV <num>' then set the global
    lenIV to <num>.  This indicates the number of random bytes at the beginning
