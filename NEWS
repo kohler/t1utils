@@ -1,6 +1,12 @@
 T1utils NEWS
 
-Version 1.30   6.Jan.2003
+Version 1.31   8.Feb.2004
+
+* All: Support fonts where the eexec-encrypted portion is binary, and the
+  first ciphertext byte is 0.  Reported by Werner Lemberg.
+
+
+Version 1.30   6.Jan.2004
 
 * All: Support fonts, such as those in PostScript files printed by
   acroread, where "currentfile eexec" is not followed by a newline.

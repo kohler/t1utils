@@ -150,9 +150,11 @@ process_pfa(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
 
 	/* check immediately after "currentfile eexec" for ASCII or binary */
 	if (blocktyp == PFA_EEXEC_TEST) {
-	    for (; *line && isspace(*line); line++)
+	    /* 8.Feb.2004: fix bug if first character in a binary eexec block
+	       is 0, reported by Werner Lemberg */
+	    for (; line < last && isspace(*line); line++)
 		/* nada */;
-	    if (!*line)
+	    if (line == last)
 		continue;
 	    else if (last >= line + 4 && isxdigit(line[0]) && isxdigit(line[1])
 		     && isxdigit(line[2]) && isxdigit(line[3]))
