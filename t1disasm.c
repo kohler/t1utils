@@ -88,7 +88,7 @@ void error(const char *message, ...);
    of each charstring. */
 
 static void
-set_lenIV(const char *line)
+set_lenIV(char *line)
 {
   char *p = strstr(line, "/lenIV ");
 
@@ -405,7 +405,7 @@ eexec_line(unsigned char *line, int line_len)
     line[line_len - 1] = '\n';
     cut_newline = 1;
   }
-  set_lenIV((const char *)line);
+  set_lenIV((char *)line);
   set_cs_start((char *)line);
   fprintf(ofp, "%.*s", line_len, line);
   save_len = 0;
