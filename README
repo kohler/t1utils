@@ -1,4 +1,4 @@
-This file documents version 1.5 of the t1utils package, originally
+This file documents version 1.5.1 of the t1utils package, originally
 by I. Lee Hetherington. What follows is largely his original README
 from 1992.
 
@@ -54,8 +54,8 @@ ilh@lcs.mit.edu
 
 ####################################################################
 
-VERSION 1.5 NOTES
-=================
+VERSION 1.5.1 NOTES
+===================
 
    You need an ANSI C compiler, such as gcc.
 
@@ -66,8 +66,14 @@ install the utilities and their manual pages.
 details. The most commonly used option is `--prefix', which can be used
 to install the utilities in a place other than /usr/local.
 
-   Changes to version 1.5 (c) 1998 Eddie Kohler, under the same
+   Changes to version 1.5.1 (c) 1998 Eddie Kohler, under the same
 redistribution copyright as I. Lee Hetherington's.
+
+Differences from Version 1.5
+----------------------------
+* t1unmac did not actually understand the -r and -b options. Fixed.
+
+* Added better diagnostics to help you diagnose seeking problems.
 
 Differences from Version 1.2
 ----------------------------

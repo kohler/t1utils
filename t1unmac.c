@@ -14,6 +14,9 @@
  * The 1.5 versions are maintained by eddietwo@lcs.mit.edu.
  *
  * $Log: t1unmac.c,v $
+ * Revision 1.3  1998/05/31 18:09:56  eddietwo
+ * fixed t1unmac
+ *
  * Revision 1.2  1998/03/27 19:28:01  eddietwo
  * change --output FIEL to --output=FILE
  *
@@ -45,7 +48,7 @@
 
 #ifndef lint
 static char rcsid[] =
-  "@(#) $Id: t1unmac.c,v 1.2 1998/03/27 19:28:01 eddietwo Exp $";
+  "@(#) $Id: t1unmac.c,v 1.3 1998/05/31 18:09:56 eddietwo Exp $";
 static char copyright[] =
   "@(#) Copyright (c) 1992 by I. Lee Hetherington, all rights reserved.";
 #ifdef _MSDOS
@@ -87,7 +90,7 @@ static int read_two(FILE *fi)
   int val;
 
   val = read_one(fi);
-  val = (val << 8) + read_one(fi);
+  val = (val << 8) | read_one(fi);
 
   return val;
 }
@@ -97,8 +100,8 @@ static int32 read_three(FILE *fi)
   int32 val;
 
   val = read_one(fi);
-  val = (val << 8) + read_one(fi);
-  val = (val << 8) + read_one(fi);
+  val = (val << 8) | read_one(fi);
+  val = (val << 8) | read_one(fi);
 
   return val;
 }
@@ -108,9 +111,9 @@ static int32 read_four(FILE *fi)
   int32 val;
 
   val = read_one(fi);
-  val = (val << 8) + read_one(fi);
-  val = (val << 8) + read_one(fi);
-  val = (val << 8) + read_one(fi);
+  val = (val << 8) | read_one(fi);
+  val = (val << 8) | read_one(fi);
+  val = (val << 8) | read_one(fi);
 
   return val;
 }
@@ -133,7 +136,8 @@ static void reposition(FILE *fi, int32 absolute)
 {
   if (fseek(fi, absolute, 0) == -1)
     fatal_error("can't seek to position %d\n\
-   (You can't pipe me data. Give me a filename instead.)", absolute);
+   (The Mac file may be corrupted, or you may need the `-r' option.)",
+		absolute);
 }
 
 static int hex_column = 0;                        /* current column of hex */
@@ -227,15 +231,15 @@ static void extract_data(FILE *fi, FILE *fo, int32 offset, int binary)
 #define PFB_OPT		304
 #define PFA_OPT		305
 #define MACBINARY_OPT	306
-#define RAW_RES_OPT	307
+#define RAW_OPT		307
 
 static Clp_Option options[] = {
   { "help", 0, HELP_OPT, 0, 0 },
-  { "macbinary", 0, MACBINARY_OPT, 0, 0 },
+  { "macbinary", 0, MACBINARY_OPT, 0, Clp_Negate },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
   { "pfa", 'a', PFA_OPT, 0, 0 },
   { "pfb", 'b', PFB_OPT, 0, 0 },
-  { "raw", 'r', RAW_RES_OPT, 0, 0 },
+  { "raw", 'r', RAW_OPT, 0, Clp_Negate },
   { "version", 0, VERSION_OPT, 0, 0 },
 };
 static char *program_name;
@@ -310,6 +314,14 @@ int main(int argc, char **argv)
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
+
+     case RAW_OPT:
+      raw = clp->negated ? 0 : 1;
+      break;
+
+     case MACBINARY_OPT:
+      raw = clp->negated ? 1 : 0;
+      break;
       
      output_file:
      case OUTPUT_OPT:
@@ -380,6 +392,17 @@ particular purpose. That's right: you're on your own!\n");
     _setmode(_fileno(ofp), _O_BINARY);
   #endif
 
+  /* check for non-seekable input */
+  if (fseek(ifp, 0, 0))
+    fatal_error("input file isn't seekable\n\
+  (I can't read from stdin; give me a filename on the command line instead.)");
+  
+  /* check for empty file */
+  fseek(ifp, 0, 2);
+  if (ftell(ifp) == 0)
+    fatal_error("input file is empty\n\
+  (Try re-transferring the files using MacBinary format.)");
+  
   if (raw) {
     /* raw resource file */
     res_offset = 0;
