@@ -104,17 +104,20 @@ process_pfa(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
     *p = 0;
     
     /* now that we have the line, handle it */
-    if (blocktyp == ASCII && strcmp(line, "currentfile eexec\n") == 0) {
+    if (blocktyp == ASCII) {
       fr->output_ascii(line);
-      blocktyp = BINARY;
-    } else if (blocktyp == BINARY && all_zeroes(line)) {
-      fr->output_ascii(line);
-      blocktyp = ASCII;
-    } else if (blocktyp == ASCII) {
-      fr->output_ascii(line);
-    } else {
-      int len = translate_hex_string(line);
-      fr->output_binary(line, len);
+      if (strncmp(line, "currentfile eexec", 17) == 0) {
+	for (p = line + 17; isspace(*p); p++) ;
+	if (!*p) blocktyp = BINARY;
+      }
+    } else { /* blocktyp == BINARY */
+      if (all_zeroes(line)) {
+	fr->output_ascii(line);
+	blocktyp = ASCII;
+      } else {
+	int len = translate_hex_string(line);
+	fr->output_binary(line, len);
+      }
     }
   }
   

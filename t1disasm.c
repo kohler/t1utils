@@ -102,18 +102,23 @@ static uint16 c1 = 52845, c2 = 22719, cr_default = 4330;
 
 static int eexec_scanner(int c)
 {
+  /* Allow for arbitrary whitespace before the \n in "currentfile eexec\n",
+     required by some fonts. Reported by Tom Kacvinsky <tjk@ams.org>. */
   static char *key = "currentfile eexec\n";
   static char *p = 0;
-
+  
   if (!p)
     p = key;
-
+  
   if (c && *p) {
     if ((char) (c & 0xff) == *p)
       ++p;
+    else if (*p == '\n' && isspace(c))
+      /* nada */;
     else
       p = key;
   }
+  
   return *p == '\0';
 }
 
@@ -295,7 +300,7 @@ static byte cdecrypt(byte cipher)
 static int immediate_eexec()
 {
   static int reported = 0;
-
+  
   if (!reported && eexec_scanner(0)) {
     reported = 1;
     return 1;

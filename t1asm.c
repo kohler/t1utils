@@ -777,9 +777,15 @@ particular purpose.\n");
     getline();
     
     if (!ever_active) {
-      if (strcmp(line, "currentfile eexec\n") == 0) {
-	eexec_start();
-	continue;
+      if (strncmp(line, "currentfile eexec", 17) == 0) {
+	/* Allow arbitrary whitespace after "currentfile eexec".
+	   Thanks to Tom Kacvinsky <tjk@ams.org> for reporting this.
+	   Note: strlen("currentfile eexec") == 17. */
+	for (p = line + 17; isspace(*p); p++) ;
+	if (!*p) {
+	  eexec_start();
+	  continue;
+	}
       } else if (strncmp(line, "/lenIV", 6) == 0) {
 	lenIV = atoi(line + 6);
       } else if ((p = strstr(line, "/Subrs")) && isdigit(p[7])) {
