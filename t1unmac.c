@@ -505,7 +505,7 @@ check_binhex_crc(FILE *f, int offset, int length)
   while (length > 0) {
     int n = (length < 2048 ? length : 2048);
     fread(buf, 1, n, f);
-    crc = hqx_crcbuf(crc, n, buf);
+    crc = crcbuf(crc, n, buf);
     length -= n;
   }
   return crc == 0;

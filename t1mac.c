@@ -708,10 +708,10 @@ output_binhex(FILE *rf, int32 rf_len, const char *filename, FILE *f)
   store_four(T1_FILETYPE, buf+2+len); /* file type */
   store_four(T1_FILECREATOR, buf+6+len); /* file creator */
   store_one(T1_FINDERFLAGS, buf+10+len); /* finder flags */
-  store_one(0, buf+10+len);	/* extended finder flags */
+  store_one(0, buf+11+len);	/* extended finder flags */
   store_four(0, buf+12+len);	/* length of data fork */
   store_four(rf_len, buf+16+len); /* length of resource fork */
-  store_two(hqx_crcbuf(0, 20+len, buf), buf+20+len); /* CRC */
+  store_two(crcbuf(0, 20+len, buf), buf+20+len); /* CRC */
   store_two(0, buf+22+len);	/* data fork CRC */
 
   /* output BinHex comment */
@@ -726,7 +726,7 @@ output_binhex(FILE *rf, int32 rf_len, const char *filename, FILE *f)
   while (rf_len > 0) {
     int n = (rf_len < 2048 ? rf_len : 2048);
     fread(buf, 1, n, rf);
-    crc = hqx_crcbuf(crc, n, buf);	/* update CRC */
+    crc = crcbuf(crc, n, buf);	/* update CRC */
     binhex_buffer(buf, n, f);
     rf_len -= n;
   }

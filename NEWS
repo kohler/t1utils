@@ -1,5 +1,12 @@
 T1utils NEWS
 
+Version 1.23   18.Jun.2001
+
+* Fixed Macintosh file bugs: the MacBinary CRC was calculated incorrectly,
+  and extended finder flags were set to random values in BinHex output.
+  Reported, and patch provided, by Tom Kacvinsky <tjk@ams.org>.
+
+
 Version 1.22   6.Mar.2001
 
 * Fixed bug on processing PFA fonts with DOS line endings. The symptom was

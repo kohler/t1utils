@@ -38,7 +38,6 @@ void pfb_writer_end(struct pfb_writer *);
       } while (0)
 
 int crcbuf(int crc, unsigned int len, unsigned char *buf);
-int hqx_crcbuf(int crc, unsigned int len, unsigned char *buf);
 
 /* whoever uses this code must provide a definition for these functions */
 extern void error(const char *, ...);
