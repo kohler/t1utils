@@ -33,7 +33,7 @@ char *strerror(int errno);
 
 #ifdef __cplusplus
 }
-/* Get rid of inline macro under C++ */
-# undef inline
+/* Get rid of a possible inline macro under C++. */
+# define inline inline
 #endif
 #endif
