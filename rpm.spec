@@ -1,9 +1,9 @@
 Summary: Programs for manipulating PostScript Type 1 fonts
 
 Name: t1utils
-Version: 1.10.1
+Version: 1.11
 Release: 1
-Source: http://www.lcdf.org/type/t1utils-1.10.1.tar.gz
+Source: http://www.lcdf.org/type/t1utils-1.11.tar.gz
 
 URL: http://www.lcdf.org/type/
 
