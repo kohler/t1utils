@@ -1,4 +1,7 @@
 .ds V 1.27
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
 .TH T1MAC 1 "" "Version \*V"
 .SH NAME
 t1mac \- translate a PFA or PFB PostScript Type 1 font into Macintosh format
@@ -50,10 +53,10 @@ Macintosh conventions. This option is not useful when output is a raw
 resource fork.
 .SH "SEE ALSO"
 .LP
-.BR t1unmac (1),
-.BR t1ascii (1),
-.BR t1binary (1),
-.BR t1asm (1),
-.BR t1disasm (1)
+.M t1unmac 1 ,
+.M t1ascii 1 ,
+.M t1binary 1 ,
+.M t1asm 1 ,
+.M t1disasm 1
 .SH AUTHORS
 Eddie Kohler (kohler@icir.org)

@@ -1,4 +1,7 @@
 .ds V 1.27
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
 .TH T1UNMAC 1  "" "Version \*V"
 .SH NAME
 t1unmac \- translate a Mac PostScript Type 1 font into PFA or PFB format
@@ -54,11 +57,11 @@ PFA only: Set the maximum length of encrypted lines in the output to
 is 64.
 .SH "SEE ALSO"
 .LP
-.BR t1mac (1),
-.BR t1ascii (1),
-.BR t1binary (1),
-.BR t1asm (1),
-.BR t1disasm (1)
+.M t1mac 1 ,
+.M t1ascii 1 ,
+.M t1binary 1 ,
+.M t1asm 1 ,
+.M t1disasm 1
 .SH AUTHORS
 Lee Hetherington (ilh@lcs.mit.edu)
 .br

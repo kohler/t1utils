@@ -1,4 +1,7 @@
 .ds V 1.27
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
 .TH T1DISASM 1  "" "Version \*V"
 .SH NAME
 t1disasm \- disassemble PostScript Type 1 font
@@ -71,11 +74,11 @@ entries like
 .RE
 .SH "SEE ALSO"
 .LP
-.BR t1asm (1),
-.BR t1ascii (1),
-.BR t1binary (1),
-.BR t1unmac (1),
-.BR t1mac (1)
+.M t1asm 1 ,
+.M t1ascii 1 ,
+.M t1binary 1 ,
+.M t1unmac 1 ,
+.M t1mac 1
 .LP
 .I "Adobe Type 1 Font Format"
 is available free from Adobe as a PDF file:

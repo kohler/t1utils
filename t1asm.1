@@ -1,4 +1,7 @@
 .ds V 1.27
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
 .TH T1ASM 1  "" "Version \*V"
 .SH NAME
 t1asm \- assemble PostScript Type 1 font
@@ -71,11 +74,11 @@ is 64.
 .fi
 .SH "SEE ALSO"
 .LP
-.BR t1disasm (1),
-.BR t1ascii (1),
-.BR t1binary (1),
-.BR t1unmac (1),
-.BR t1mac (1)
+.M t1disasm 1 ,
+.M t1ascii 1 ,
+.M t1binary 1 ,
+.M t1unmac 1 ,
+.M t1mac 1
 .LP
 .I "Adobe Type 1 Font Format"
 is available free from Adobe as a PDF file.
