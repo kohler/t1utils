@@ -1,5 +1,11 @@
 T1utils NEWS
 
+Version 1.32   23.Feb.2004
+
+* t1disasm: Avoid memory corruption bug (strings passed to eexec_line are
+  not null terminated).  Reported by Werner Lemberg.
+
+
 Version 1.31   8.Feb.2004
 
 * All: Support fonts where the eexec-encrypted portion is binary, and the
