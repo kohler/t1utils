@@ -285,9 +285,9 @@ void
 usage(void)
 {
   printf("\
-`T1binary' translates a PostScript Type 1 font from ASCII to binary format.\n\
-Output is written to standard out unless an OUTPUT file is given. Use\n\
-`t1ascii' to go the other way.\n\
+`T1binary' translates a PostScript Type 1 font from ASCII (PFA) to compact\n\
+binary (PFB) format. (Use t1ascii to go back from PFB to PFA.) Output is\n\
+written to standard out unless an OUTPUT file is given.\n\
 \n\
 Usage: %s [OPTION]... [INPUT [OUTPUT]]\n\
 \n\
@@ -343,7 +343,7 @@ int main(int argc, char **argv)
       break;
       
      case VERSION_OPT:
-      printf("t1binary version %s\n", VERSION);
+      printf("t1binary (LCDF t1utils) %s\n", VERSION);
       printf("Copyright (C) 1992-9 I. Lee Hetherington, Eddie Kohler et al.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\

@@ -334,7 +334,7 @@ int main(int argc, char **argv)
       break;
       
      case VERSION_OPT:
-      printf("t1unmac version %s\n", VERSION);
+      printf("t1unmac (LCDF t1utils) %s\n", VERSION);
       printf("Copyright (C) 1992-9 I. Lee Hetherington, Eddie Kohler et al.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\

@@ -608,9 +608,10 @@ void
 usage(void)
 {
   printf("\
-`T1disasm' translates a PostScript Type 1 font into a human-readable,\n\
-human-editable format. Output is written to standard out unless an OUTPUT file\n\
-is given. Use `t1asm' to go the other way.\n\
+`T1disasm' translates a PostScript Type 1 font in PFB or PFA format into a\n\
+human-readable, human-editable form. (Use t1asm to go from human-readable form\n\
+back to PFB or PFA.) Output is written to standard out unless an OUTPUT file\n\
+is given.\n\
 \n\
 Usage: %s [OPTION]... [INPUT [OUTPUT]]\n\
 \n\
@@ -652,7 +653,7 @@ int main(int argc, char **argv)
       break;
       
      case VERSION_OPT:
-      printf("t1disasm version %s\n", VERSION);
+      printf("t1disasm (LCDF t1utils) %s\n", VERSION);
       printf("Copyright (C) 1992-9 I. Lee Hetherington, Eddie Kohler et al.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
