@@ -351,7 +351,7 @@ particular purpose.\n");
   else if (c == '%')
     process_pfa(ifp, ifp_filename, &fr);
   else
-    fatal_error("%s does not start with font marker (`%' or 0x80)");
+    fatal_error("%s does not start with font marker (`%%' or 0x80)", ifp_filename);
   
   fclose(ifp);
   fclose(ofp);

@@ -26,7 +26,9 @@ rpm: dist
 	buildarch=`rpm --showrc | awk '/^build arch/ { print $$4; }'` ; \
 	mkdir -p /tmp/rpm-t1u/SOURCES /tmp/rpm-t1u/RPMS/$$buildarch \
 	/tmp/rpm-t1u/BUILD ; \
-	echo 'topdir: /tmp/rpm-t1u' > /tmp/rpm-t1u/rc ; \
+	echo 'include: /usr/lib/rpm/rpmrc' > /tmp/rpm-t1u/rc ; \
+	echo 'macrofiles: /usr/lib/rpm/macros:/tmp/rpm-t1u/macros' >> /tmp/rpm-t1u/rc ; \
+	echo '%_topdir /tmp/rpm-t1u' > /tmp/rpm-t1u/macros ; \
 	cp $(PACKAGE)-$(VERSION).tar.gz /tmp/rpm-t1u/SOURCES ; \
 	rpm --rcfile /tmp/rpm-t1u/rc -bb rpm.spec ; \
 	cp /tmp/rpm-t1u/RPMS/$$buildarch/*.rpm .

@@ -1,6 +1,8 @@
 T1utils NEWS
 
-Version 1.15
+Version 1.15   4.Apr.2000
+
+* t1ascii, t1binary, and t1disasm: Fixed bad error message.
 
 * t1unmac: Generates PFB fonts by default.
 
