@@ -14,6 +14,9 @@
  * The 1.5 versions are maintained by eddietwo@lcs.mit.edu.
  *
  * $Log: t1ascii.c,v $
+ * Revision 1.3  1998/09/18 17:34:47  eddietwo
+ * That's right: message removed
+ *
  * Revision 1.2  1998/03/27 19:27:47  eddietwo
  * change --output FIEL to --output=FILE
  *
@@ -42,7 +45,7 @@
 
 #ifndef lint
 static char rcsid[] =
-  "@(#) $Id: t1ascii.c,v 1.2 1998/03/27 19:27:47 eddietwo Exp $";
+  "@(#) $Id: t1ascii.c,v 1.3 1998/09/18 17:34:47 eddietwo Exp $";
 static char copyright[] =
   "@(#) Copyright (c) 1992 by I. Lee Hetherington, all rights reserved.";
 #ifdef _MSDOS
@@ -213,7 +216,7 @@ int main(int argc, char **argv)
       printf("Copyright (C) 1992-8 I. Lee Hetherington et al.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
-particular purpose. That's right: you're on your own!\n");
+particular purpose.\n");
       exit(0);
       break;
       

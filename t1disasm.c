@@ -57,7 +57,7 @@
 
 #ifndef lint
 static char rcsid[] =
-  "@(#) $Id: t1disasm.c,v 1.3 1998/09/02 20:16:04 eddietwo Exp $";
+  "@(#) $Id: t1disasm.c,v 1.4 1998/09/18 17:34:47 eddietwo Exp $";
 static char copyright[] =
   "@(#) Copyright (c) 1992 by I. Lee Hetherington, all rights reserved.";
 #ifdef _MSDOS
@@ -664,7 +664,7 @@ int main(int argc, char **argv)
       printf("Copyright (C) 1992-8 I. Lee Hetherington et al.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
-particular purpose. That's right: you're on your own!\n");
+particular purpose.\n");
       exit(0);
       break;
       
