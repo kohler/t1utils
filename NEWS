@@ -3,13 +3,13 @@ T1utils NEWS
 Version 1.17   27.Apr.2000
 
 * Added new program, `t1mac', which translates PFA or PFB fonts into
-  Macintosh-style fonts. T1mac can output in MacBinary, AppleSingle, or
-  BinHex format.
-
-* t1unmac: Fixed manual page and program options to add
-  `--applesingle/double' for real.
+  Macintosh-style fonts. T1mac can output in MacBinary, AppleSingle,
+  AppleDouble, or BinHex format. Suggested by Marten Thavenius
+  <marten.thavenius@bahnhof.se>.
 
 * t1unmac: Added support for BinHex.
+
+* t1unmac: Fixed bugs in manual page and program options.
 
 
 Version 1.16   25.Apr.2000
