@@ -867,9 +867,9 @@ main(int argc, char **argv)
       if (strcmp(clp->arg, "-") == 0)
 	ofp = stdout;
       else {
-	ofp = fopen(clp->arg, "wb");
 	ofp_filename = clp->arg;
-	if (!ofp) fatal_error("%s: %s", clp->arg, strerror(errno));
+	ofp = fopen(ofp_filename, "wb");
+	if (!ofp) fatal_error("%s: %s", ofp_filename, strerror(errno));
       }
       break;
 

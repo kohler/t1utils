@@ -79,7 +79,6 @@ static int active = 0;
 static int ever_active = 0;
 static int start_charstring = 0;
 static int in_eexec = 0;
-static int ever_eexec = 0;
 
 /* need to add 1 as space for \0 */
 static char line[LINESIZE + 1];
@@ -251,7 +250,6 @@ static void eexec_start()
   }
   
   in_eexec = 1;
-  ever_eexec = 1;
   er = 55665;
   eexec_byte(0);
   eexec_byte(0);
