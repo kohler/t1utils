@@ -130,7 +130,7 @@ set_cs_start(char *line)
 static void
 output(const char *string)
 {
-  fprintf(ofp, "%s", string);
+    fprintf(ofp, "%s", string);
 }
 
 /* Subroutine to neatly format output of charstring tokens.  If token = "\n",
@@ -140,15 +140,14 @@ output(const char *string)
 static void
 output_token(const char *token)
 {
-  static int start = 1;
-  
-  if (strcmp(token, "\n") == 0) {
-    fprintf(ofp, "\n");
-    start = 1;
-  } else {
-    fprintf(ofp, "%s%s", start ? "\t" : " ", token);
-    start = 0;
-  }
+    static int start = 1;
+    if (strcmp(token, "\n") == 0) {
+	fprintf(ofp, "\n");
+	start = 1;
+    } else {
+	fprintf(ofp, "%s%s", start ? "\t" : " ", token);
+	start = 0;
+    }
 }
 
 /* Subroutine to decrypt and ASCII-ify tokens in charstring data. The
@@ -331,115 +330,135 @@ append_save(unsigned char *line, int len)
   save_len += len;
 }
 
+/* 23.Feb.2004 - use 'memstr', not strstr, because the strings input to
+   eexec_line aren't null terminated! Reported by Werner Lemberg. */
+
+static const char *
+oog_memstr(const char *line, int line_len, const char *pattern, int pattern_len)
+{
+    const char *try;
+    const char *last = line + line_len - pattern_len + 1;
+    while (line < last
+	   && (try = memchr(line, (unsigned char)*pattern, last - line))) {
+	if (memcmp(try, pattern, pattern_len) == 0)
+	    return try;
+	else
+	    line = try + 1;
+    }
+    return 0;
+}
+
 /* returns 1 if next \n should be deleted */
 
 static int
 eexec_line(unsigned char *line, int line_len)
 {
-  int cs_start_len = strlen(cs_start);
-  int pos;
-  int first_space;
-  int digits;
-  int cut_newline = 0;
+    int cs_start_len = strlen(cs_start);
+    int pos;
+    int first_space;
+    int digits;
+    int cut_newline = 0;
   
-  /* append this data to the end of `save' if necessary */
-  if (save_len) {
-    append_save(line, line_len);
-    line = save;
-    line_len = save_len;
-  }
-  
-  if (!line_len)
-    return 0;
-  
-  /* Look for charstring start */
-  
-  /* skip first word */
-  for (pos = 0; pos < line_len && isspace(line[pos]); pos++)
-      ;
-  while (pos < line_len && !isspace(line[pos]))
-      pos++;
-  if (pos >= line_len)
-      goto not_charstring;
-  
-  /* skip spaces */
-  first_space = pos;
-  while (pos < line_len && isspace(line[pos]))
-      pos++;
-  if (pos >= line_len || !isdigit(line[pos]))
-      goto not_charstring;
-
-  /* skip number */
-  digits = pos;
-  while (pos < line_len && isdigit(line[pos])) pos++;
-  
-  /* check for subr (another number) */
-  if (pos < line_len - 1 && isspace(line[pos]) && isdigit(line[pos+1])) {
-    first_space = pos;
-    digits = pos + 1;
-    for (pos = digits; pos < line_len && isdigit(line[pos]); pos++) ;
-  }
-  
-  /* check for charstring start */
-  if (pos + 2 + cs_start_len < line_len
-      && pos > digits
-      && line[pos] == ' '
-      && strncmp((const char *)(line + pos + 1), cs_start, cs_start_len) == 0
-      && line[pos + 1 + cs_start_len] == ' ') {
-    /* check if charstring is long enough */
-    int cs_len = atoi((const char *)(line + digits));
-    if (pos + 2 + cs_start_len + cs_len < line_len) {
-      /* long enough! */
-      if (line[line_len - 1] == '\r') {
-	line[line_len - 1] = '\n';
-	cut_newline = 1;
-      }
-      fprintf(ofp, "%.*s {\n", first_space, line);
-      decrypt_charstring(line + pos + 2 + cs_start_len, cs_len);
-      pos += 2 + cs_start_len + cs_len;
-      fprintf(ofp, "\t}%.*s", line_len - pos, line + pos);
-      save_len = 0;
-      return cut_newline;
-    } else {
-      /* not long enough! */
-      if (line != save)
+    /* append this data to the end of `save' if necessary */
+    if (save_len) {
 	append_save(line, line_len);
-      return 0;
+	line = save;
+	line_len = save_len;
     }
-  }
   
-  /* otherwise, just output the line */
- not_charstring:
-  /* 6.Oct.2003 - Werner Lemberg reports a stupid Omega font that behaves
+    if (!line_len)
+	return 0;
+  
+    /* Look for charstring start */
+  
+    /* skip first word */
+    for (pos = 0; pos < line_len && isspace(line[pos]); pos++)
+	;
+    while (pos < line_len && !isspace(line[pos]))
+	pos++;
+    if (pos >= line_len)
+	goto not_charstring;
+  
+    /* skip spaces */
+    first_space = pos;
+    while (pos < line_len && isspace(line[pos]))
+	pos++;
+    if (pos >= line_len || !isdigit(line[pos]))
+	goto not_charstring;
+
+    /* skip number */
+    digits = pos;
+    while (pos < line_len && isdigit(line[pos]))
+	pos++;
+  
+    /* check for subr (another number) */
+    if (pos < line_len - 1 && isspace(line[pos]) && isdigit(line[pos+1])) {
+	first_space = pos;
+	digits = pos + 1;
+	for (pos = digits; pos < line_len && isdigit(line[pos]); pos++)
+	    ;
+    }
+  
+    /* check for charstring start */
+    if (pos + 2 + cs_start_len < line_len
+	&& pos > digits
+	&& line[pos] == ' '
+	&& strncmp((const char *)(line + pos + 1), cs_start, cs_start_len) == 0
+	&& line[pos + 1 + cs_start_len] == ' ') {
+	/* check if charstring is long enough */
+	int cs_len = atoi((const char *)(line + digits));
+	if (pos + 2 + cs_start_len + cs_len < line_len) {
+	    /* long enough! */
+	    if (line[line_len - 1] == '\r') {
+		line[line_len - 1] = '\n';
+		cut_newline = 1;
+	    }
+	    fprintf(ofp, "%.*s {\n", first_space, line);
+	    decrypt_charstring(line + pos + 2 + cs_start_len, cs_len);
+	    pos += 2 + cs_start_len + cs_len;
+	    fprintf(ofp, "\t}%.*s", line_len - pos, line + pos);
+	    save_len = 0;
+	    return cut_newline;
+	} else {
+	    /* not long enough! */
+	    if (line != save)
+		append_save(line, line_len);
+	    return 0;
+	}
+    }
+  
+    /* otherwise, just output the line */
+  not_charstring:
+    /* 6.Oct.2003 - Werner Lemberg reports a stupid Omega font that behaves
        badly: a charstring definition follows "/Charstrings ... begin", ON THE
        SAME LINE. */
-  {
-      char *CharStrings = (char *) strstr((char *)line, "/CharStrings ");
-      int crap, n;
-      char should_be_slash = 0;
-      if (CharStrings
-	  && sscanf(CharStrings + 12, " %d dict dup begin %c%n", &crap, &should_be_slash, &n) >= 2
-	  && should_be_slash == '/') {
-	  int len = (CharStrings + 12 + n - 1) - (char *) line;
-	  fprintf(ofp, "%.*s\n", len, line);
-	  return eexec_line((unsigned char *) (CharStrings + 12 + n - 1), line_len - len);
-      }
-  }
+    {
+	const char *CharStrings = oog_memstr(line, line_len, "/CharStrings ", 13);
+	int crap, n;
+	char should_be_slash = 0;
+	if (CharStrings
+	    && sscanf(CharStrings + 12, " %d dict dup begin %c%n", &crap, &should_be_slash, &n) >= 2
+	    && should_be_slash == '/') {
+	    int len = (CharStrings + 12 + n - 1) - (char *) line;
+	    fprintf(ofp, "%.*s\n", len, line);
+	    return eexec_line((unsigned char *) (CharStrings + 12 + n - 1), line_len - len);
+	}
+    }
   
-  if (line[line_len - 1] == '\r') {
-    line[line_len - 1] = '\n';
-    cut_newline = 1;
-  }
-  set_lenIV((char *)line);
-  set_cs_start((char *)line);
-  fprintf(ofp, "%.*s", line_len, line);
-  save_len = 0;
+    if (line[line_len - 1] == '\r') {
+	line[line_len - 1] = '\n';
+	cut_newline = 1;
+    }
+    set_lenIV((char *)line);
+    set_cs_start((char *)line);
+    fprintf(ofp, "%.*s", line_len, line);
+    save_len = 0;
+
+    /* look for `currentfile closefile' to see if we should stop decrypting */
+    if (oog_memstr(line, line_len, "currentfile closefile", 21) != 0)
+	in_eexec = -1;
   
-  /* look for `currentfile closefile' to see if we should stop decrypting */
-  if (strstr((const char *)line, "currentfile closefile") != 0)
-    in_eexec = -1;
-  
-  return cut_newline;
+    return cut_newline;
 }
 
 static int
@@ -455,48 +474,52 @@ all_zeroes(const char *string)
 static void
 disasm_output_ascii(char *line, int len)
 {
-  int was_in_eexec = in_eexec;
-  (void) len;			/* avoid warning */
-  in_eexec = 0;
-  
-  /* if we just came from the "ASCII part" of an eexec section, we need to
-     process the saved lines */
-  if (was_in_eexec < 0) {
-    int i = 0;
-    int save_char = 0;		/* note: save[] is unsigned char * */
+    int was_in_eexec = in_eexec;
+    (void) len;			/* avoid warning */
+    in_eexec = 0;
+
+    /* if we came from a binary section, we need to process that too */
+    if (was_in_eexec > 0) 
+	eexec_line("", 0);
+
+    /* if we just came from the "ASCII part" of an eexec section, we need to
+       process the saved lines */
+    if (was_in_eexec < 0) {
+	int i = 0;
+	int save_char = 0;	/* note: save[] is unsigned char * */
     
-    while (i < save_len) {
-      /* grab a line */
-      int start = i;
-      while (i < save_len && save[i] != '\r' && save[i] != '\n')
-	i++;
-      if (i < save_len) {
-	if (i < save_len - 1 && save[i] == '\r' && save[i+1] == '\n')
-	  save_char = -1;
-	else
-	  save_char = save[i+1];
-	save[i] = '\n';
-	save[i+1] = 0;
-      } else
-	save[i] = 0;
+	while (i < save_len) {
+	    /* grab a line */
+	    int start = i;
+	    while (i < save_len && save[i] != '\r' && save[i] != '\n')
+		i++;
+	    if (i < save_len) {
+		if (i < save_len - 1 && save[i] == '\r' && save[i+1] == '\n')
+		    save_char = -1;
+		else
+		    save_char = save[i+1];
+		save[i] = '\n';
+		save[i+1] = 0;
+	    } else
+		save[i] = 0;
 
-      /* output it */
-      disasm_output_ascii((char *)(save + start), -1);
+	    /* output it */
+	    disasm_output_ascii((char *)(save + start), -1);
 
-      /* repair damage */
-      if (i < save_len) {
-	if (save_char >= 0) {
-	  save[i+1] = save_char;
-	  i++;
-	} else
-	  i += 2;
-      }
+	    /* repair damage */
+	    if (i < save_len) {
+		if (save_char >= 0) {
+		    save[i+1] = save_char;
+		    i++;
+		} else
+		    i += 2;
+	    }
+	}
+	save_len = 0;
     }
-    save_len = 0;
-  }
   
-  if (!all_zeroes(line))
-    output(line);
+    if (!all_zeroes(line))
+	output(line);
 }
 
 /* collect until '\n' or end of binary section */
@@ -504,69 +527,69 @@ disasm_output_ascii(char *line, int len)
 static void
 disasm_output_binary(unsigned char *data, int len)
 {
-  static int ignore_newline;
-  static uint16_t er;
+    static int ignore_newline;
+    static uint16_t er;
   
-  byte plain;
-  int i;
+    byte plain;
+    int i;
   
-  /* if we're in the ASCII portion of a binary section, just save this data */
-  if (in_eexec < 0) {
-    append_save(data, len);
-    return;
-  }
+    /* in the ASCII portion of a binary section, just save this data */
+    if (in_eexec < 0) {
+	append_save(data, len);
+	return;
+    }
 
-  /* eexec initialization */
-  if (in_eexec == 0) {
-    er = er_default;
-    ignore_newline = 0;
-    in_eexec = 0;
-  }
-  if (in_eexec < 4) {
-    for (i = 0; i < len && in_eexec < 4; i++, in_eexec++) {
-      byte cipher = data[i];
-      plain = (byte)(cipher ^ (er >> 8));
-      er = (uint16_t)((cipher + er) * c1 + c2);
-      data[i] = plain;
+    /* eexec initialization */
+    if (in_eexec == 0) {
+	er = er_default;
+	ignore_newline = 0;
+	in_eexec = 0;
     }
-    data += i;
-    len -= i;
-  }
+    if (in_eexec < 4) {
+	for (i = 0; i < len && in_eexec < 4; i++, in_eexec++) {
+	    byte cipher = data[i];
+	    plain = (byte)(cipher ^ (er >> 8));
+	    er = (uint16_t)((cipher + er) * c1 + c2);
+	    data[i] = plain;
+	}
+	data += i;
+	len -= i;
+    }
   
-  /* now make lines: collect until '\n' or '\r' and pass them off to
-     eexec_line. */
-  i = 0;
-  while (in_eexec > 0) {
-    int start = i;
+    /* now make lines: collect until '\n' or '\r' and pass them off to
+       eexec_line. */
+    i = 0;
+    while (in_eexec > 0) {
+	int start = i;
     
-    for (; i < len; i++) {
-      byte cipher = data[i];
-      plain = (byte)(cipher ^ (er >> 8));
-      er = (uint16_t)((cipher + er) * c1 + c2);
-      data[i] = plain;
-      if (plain == '\r' || plain == '\n')
-	  break;
+	for (; i < len; i++) {
+	    byte cipher = data[i];
+	    plain = (byte)(cipher ^ (er >> 8));
+	    er = (uint16_t)((cipher + er) * c1 + c2);
+	    data[i] = plain;
+	    if (plain == '\r' || plain == '\n')
+		break;
+	}
+    
+	if (ignore_newline && start < i && data[start] == '\n') {
+	    ignore_newline = 0;
+	    continue;
+	}
+    
+	if (i >= len) {
+	    if (start < len)
+		append_save(data + start, i - start);
+	    break;
+	}
+
+	i++;
+	ignore_newline = eexec_line(data + start, i - start);
     }
-    
-    if (ignore_newline && start < i && data[start] == '\n') {
-      ignore_newline = 0;
-      continue;
-    }
-    
-    if (i >= len) {
-      if (start < len)
-	  append_save(data + start, i - start);
-      break;
-    }
-    
-    i++;
-    ignore_newline = eexec_line(data + start, i - start);
-  }
   
-  /* if in_eexec < 0, we have some plaintext lines sitting around in a binary
-     section of the PFB. save them for later */
-  if (in_eexec < 0 && i < len)
-    append_save(data + i, len - i);
+    /* if in_eexec < 0, we have some plaintext lines sitting around in a binary
+       section of the PFB. save them for later */
+    if (in_eexec < 0 && i < len)
+	append_save(data + i, len - i);
 }
 
 static void
