@@ -13,23 +13,7 @@
  *
  * The 1.5 versions are maintained by eddietwo@lcs.mit.edu.
  *
- * $Log: t1binary.c,v $
- * Revision 1.3  1998/09/18 17:34:47  eddietwo
- * That's right: message removed
- *
- * Revision 1.2  1998/03/27 19:27:54  eddietwo
- * change --output FIEL to --output=FILE
- *
- * Revision 1.1.1.1  1998/03/05 16:28:45  eddietwo
- * initial version
- *
- * Revision 1.5  eddietwo (skip for consistency in t1utils package)
- * These changes by Eddie Kohler (eddietwo@lcs.mit.edu) not sanctioned
- * by I. Lee Hetherington.
- *  * Complicated line-reading strategy to better support Macintosh files,
- *    which separate lines with `\r' only (not `\r\n' as MS-DOS does).
- *  * Supports lines with an odd number of hex digits.
- *  * Removed banner, replaced getopt with CLP.
+ * Old change log:
  *
  * Revision 1.2  92/06/23  10:58:08  ilh
  * MSDOS porting by Kai-Uwe Herbing (herbing@netmbx.netmbx.de)
@@ -45,17 +29,6 @@
  * defined, if you compile with the Microsoft C/C++ Compiler.
  *
  */
-
-#ifndef lint
-static char rcsid[] =
-  "@(#) $Id: t1binary.c,v 1.3 1998/09/18 17:34:47 eddietwo Exp $";
-static char copyright[] =
-  "@(#) Copyright (c) 1992 by I. Lee Hetherington, all rights reserved.";
-#ifdef _MSDOS
-static char portnotice[] =
-  "@(#) Ported to MS-DOS by Kai-Uwe Herbing (herbing@netmbx.netmbx.de).";
-#endif
-#endif
 
 /* Note: this is ANSI C. */
 
@@ -306,14 +279,19 @@ Type %s --help for more information.\n",
 void
 usage(void)
 {
-  fprintf(stderr, "Usage: %s [options] [input [output]]\n\
+  printf("\
+`T1binary' translates a PostScript Type 1 font from ASCII to binary format.\n\
+Output is written to standard out. Use `t1ascii' to go the other way.\n\
+\n\
+Usage: %s [options] [input [output]]\n\
+\n\
 Options:\n\
   --block-length=NUM, -l NUM    Output blocks will have size NUM.\n\
   --output=FILE, -o FILE        Write output to FILE.\n\
   --help, -h                    Print this message and exit.\n\
   --version                     Print version number and warranty and exit.\n\
-",
-	  program_name);
+\n\
+Report bugs to <eddietwo@lcs.mit.edu>.\n", program_name);
 }
 
 
@@ -363,7 +341,7 @@ int main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("t1binary version %s\n", VERSION);
-      printf("Copyright (C) 1992-8 I. Lee Hetherington et al.\n\
+      printf("Copyright (C) 1992-8 I. Lee Hetherington, Eddie Kohler et al.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");

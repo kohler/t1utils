@@ -1,4 +1,4 @@
-This file documents version 1.5.2 of the t1utils package, originally
+This file documents version 1.5.3 of the t1utils package, originally
 by I. Lee Hetherington. What follows is largely his original README
 from 1992.
 
@@ -54,7 +54,7 @@ ilh@lcs.mit.edu
 
 ####################################################################
 
-VERSION 1.5.1 NOTES
+VERSION 1.5.3 NOTES
 ===================
 
    You need an ANSI C compiler, such as gcc.
@@ -66,29 +66,8 @@ install the utilities and their manual pages.
 details. The most commonly used option is `--prefix', which can be used
 to install the utilities in a place other than /usr/local.
 
-   Changes to version 1.5.1 (c) 1998 Eddie Kohler, under the same
+   Changes to version 1.5.3 (c) 1998 Eddie Kohler, under the same
 redistribution copyright as I. Lee Hetherington's.
-
-Differences from Version 1.5
-----------------------------
-* t1unmac did not actually understand the -r and -b options. Fixed.
-
-* Added better diagnostics to help you diagnose seeking problems.
-
-Differences from Version 1.2
-----------------------------
-* t1asm and t1disasm understand new commands introduced by Adobe for
-  the Type 2 charstring format. These commands are also used by multiple
-  master fonts with intermediate masters.
-    Note that t1asm and t1disasm can't actually be used on Type 2
-  charstrings because of other differences (e.g., four-byte numbers are
-  interpreted differently).
-
-* t1binary will behave properly on Type 1 fonts ported from Macintosh
-  PostScript files (originally a problem because of line endings).
-
-* All programs have been massaged to take long options and to understand
-  --help and --version options. The banners have been removed.
 
 Eddie Kohler
 eddietwo@lcs.mit.edu

@@ -1,4 +1,4 @@
-/* unpost
+/* t1unmac/unpost
  *
  * This program converts Macintosh type-1 fonts stored in MacBinary (I or II)
  * format or raw resource fork to PFA and PFB formats.
@@ -13,24 +13,7 @@
  *
  * The 1.5 versions are maintained by eddietwo@lcs.mit.edu.
  *
- * $Log: t1unmac.c,v $
- * Revision 1.4  1998/09/18 17:34:47  eddietwo
- * That's right: message removed
- *
- * Revision 1.3  1998/05/31 18:09:56  eddietwo
- * fixed t1unmac
- *
- * Revision 1.2  1998/03/27 19:28:01  eddietwo
- * change --output FIEL to --output=FILE
- *
- * Revision 1.1.1.1  1998/03/05 16:28:46  eddietwo
- * initial version
- *
- * Revision 1.5  eddietwo
- * These changes by Eddie Kohler (eddietwo@lcs.mit.edu) not sanctioned
- * by I. Lee Hetherington.
- *  * Changed default output to PFB.
- *  * Removed banner, replaced getopt with CLP.
+ * Old change log:
  *
  * Revision 1.2  92/06/23  10:57:33  ilh
  * MSDOS porting by Kai-Uwe Herbing (herbing@netmbx.netmbx.de)
@@ -48,17 +31,6 @@
  */
 
 /* Note: this is ANSI C. */
-
-#ifndef lint
-static char rcsid[] =
-  "@(#) $Id: t1unmac.c,v 1.4 1998/09/18 17:34:47 eddietwo Exp $";
-static char copyright[] =
-  "@(#) Copyright (c) 1992 by I. Lee Hetherington, all rights reserved.";
-#ifdef _MSDOS
-static char portnotice[] =
-  "@(#) Ported to MS-DOS by Kai-Uwe Herbing (herbing@netmbx.netmbx.de).";
-#endif
-#endif
 
 #ifdef _MSDOS
   #include <fcntl.h>
@@ -283,7 +255,12 @@ Type %s --help for more information.\n",
 void
 usage(void)
 {
-  fprintf(stderr, "Usage: %s [options] input [output]\n\
+  printf("\
+`T1unmac' extracts a PostScript Type 1 font from a Macintosh resource fork\n\
+or MacBinary file and writes it to standard out.\n\
+\n\
+Usage: %s [options] input [output]\n\
+\n\
 Options:\n\
   --raw, -r                     Input font is raw Macintosh resource fork.\n\
   --macbinary                   Input font is a MacBinary file. This is the\n\
@@ -294,8 +271,8 @@ Options:\n\
   --output=FILE, -o FILE        Write output to FILE.\n\
   --help, -h                    Print this message and exit.\n\
   --version                     Print version number and warranty and exit.\n\
-",
-	  program_name);
+\n\
+Report bugs to <eddietwo@lcs.mit.edu>.\n", program_name);
 }
 
 int main(int argc, char **argv)
@@ -354,7 +331,7 @@ int main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("t1unmac version %s\n", VERSION);
-      printf("Copyright (C) 1992-8 I. Lee Hetherington et al.\n\
+      printf("Copyright (C) 1992-8 I. Lee Hetherington, Eddie Kohler et al.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");

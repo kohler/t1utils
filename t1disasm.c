@@ -17,15 +17,7 @@
  *
  * The 1.5 versions are maintained by eddietwo@lcs.mit.edu.
  *
- * Revision 1.5.2  eddietwo
- *  * Changed "UNKNOWN_12_" to "escape_" at request of Werner Lemberg and
- *    LEE Chun-Yu
- *
- * Revision 1.5  eddietwo
- * These changes by Eddie Kohler (eddietwo@lcs.mit.edu) not sanctioned
- * by I. Lee Hetherington.
- *  * Added support for Type 2 commands like `blend' and `add'.
- *  * Removed banner, replaced getopt with CLP.
+ * Old change log:
  * 
  * Revision 1.4  92/07/10  10:55:08  ilh
  * Added support for additional PostScript after the closefile command
@@ -54,17 +46,6 @@
  * defined, if you compile with the Microsoft C/C++ Compiler.
  *
  */
-
-#ifndef lint
-static char rcsid[] =
-  "@(#) $Id: t1disasm.c,v 1.4 1998/09/18 17:34:47 eddietwo Exp $";
-static char copyright[] =
-  "@(#) Copyright (c) 1992 by I. Lee Hetherington, all rights reserved.";
-#ifdef _MSDOS
-static char portnotice[] =
-  "@(#) Ported to MS-DOS by Kai-Uwe Herbing (herbing@netmbx.netmbx.de).";
-#endif
-#endif
 
 /* Note: this is ANSI C. */
 
@@ -617,13 +598,19 @@ Type %s --help for more information.\n",
 void
 usage(void)
 {
-  fprintf(stderr, "Usage: %s [options] [input [output]]\n\
+  printf("\
+`T1disasm' translates a PostScript Type 1 font into a human-readable,\n\
+human-editable format. Output is written to standard out. Use `t1asm' to go\n\
+the other way.\n\
+\n\
+Usage: %s [options] [input [output]]\n\
+\n\
 Options:\n\
   --output=FILE, -o FILE        Write output to FILE.\n\
   --help, -h                    Print this message and exit.\n\
   --version                     Print version number and warranty and exit.\n\
-",
-	  program_name);
+\n\
+Report bugs to <eddietwo@lcs.mit.edu>.\n", program_name);
 }
 
 
@@ -661,7 +648,7 @@ int main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("t1disasm version %s\n", VERSION);
-      printf("Copyright (C) 1992-8 I. Lee Hetherington et al.\n\
+      printf("Copyright (C) 1992-8 I. Lee Hetherington, Eddie Kohler et al.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");

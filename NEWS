@@ -1,0 +1,43 @@
+T1utils NEWS
+
+Version 1.6   27.Sep.1998
+
+* `--help' now prints to stdout, following the GNU Coding Standards.
+
+
+Version 1.5.2   6.Aug.1998
+
+* t1asm/t1disasm: Changed unknown charstring commands at the request of
+  Werner Lemberg and LEE Chun-Yu. An unknown escape in the charstring, like
+  12 X, is translated to "escape_X" rather than "UNKNOWN_12_X".
+
+
+Version 1.5.1   31.May.1998
+
+* t1unmac did not actually understand the -r and -b options. Fixed.
+
+* t1unmac: Added better diagnostics to help you diagnose seeking problems.
+
+
+Version 1.5   5.Mar.1998
+
+* Initial release with Eddie Kohler as maintainer.
+
+* All: Updated to the GNU program behavior standards (long options, --help,
+  --version). Banners removed. Added more error messages.
+
+* t1binary: Removed fixed limit on line length.
+
+* t1binary: Supports Macintosh files, whose lines end in `\r'.
+
+* t1binary: Supports an odd number of hex digits in a line.
+
+* t1asm/t1disasm: Added support for Type 2 commands like `blend' and `add',
+  which also appear in some multiple master fonts like Adobe Jenson.
+
+* t1asm/t1disasm: Added support for unknown charstring commands. t1disasm
+  translates an unknown command #X to "UNKNOWN_X", and t1asm does the reverse.
+
+* t1asm/t1unmac: Changed default output to PFB.
+
+* t1unmac: Used to be called `unpost'. `t1unmac' is a much better name.

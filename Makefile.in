@@ -67,6 +67,9 @@ install-t1unmac: t1unmac t1unmac.man
 	$(INSTALL_PROGRAM) t1unmac $(bindir)/t1unmac
 	-$(INSTALL_DATA) t1unmac.man $(mandir)/t1unmac.$(manext)
 
+versionize:
+	perl -pi~ -e "s/^\\.ds V.*/.ds V $(VERSION)/;" t1ascii.man t1binary.man t1disasm.man t1asm.man t1unmac.man
+
 #####
 # Cleaning and distribution
 
@@ -77,10 +80,10 @@ distclean: mostlyclean
 	rm -f Makefile config.status config.log config.cache
 realclean: distclean
 
-dist:
+$(PACKAGE)-$(VERSION).tar.gz:
 	rm -rf $(PACKAGE)-$(VERSION)
 	mkdir $(PACKAGE)-$(VERSION) && chmod 0777 $(PACKAGE)-$(VERSION)
-	cp INSTALL Makefile.in README configure configure.in install-sh \
+	cp INSTALL Makefile.in NEWS README configure configure.in install-sh \
 	clp.c clp.h \
 	t1ascii.c t1ascii.man t1binary.c t1binary.man \
 	t1asm.c t1asm.man t1disasm.c t1disasm.man \
@@ -88,3 +91,20 @@ dist:
 	$(PACKAGE)-$(VERSION)
 	gtar czf $(PACKAGE)-$(VERSION).tar.gz $(PACKAGE)-$(VERSION)
 	rm -r $(PACKAGE)-$(VERSION)
+dist:
+	@rm -f $(PACKAGE)-$(VERSION).tar.gz
+	@make $(PACKAGE)-$(VERSION).tar.gz
+
+rpm: $(PACKAGE)-$(VERSION).tar.gz
+	buildarch=`rpm --showrc | awk '/^build arch/ { print $$4; }'` ; \
+	mkdir -p /tmp/rpmb/SOURCES /tmp/rpmb/RPMS/$$buildarch \
+	/tmp/rpmb/BUILD ; \
+	echo 'topdir: /tmp/rpmb' > /tmp/rpmb/rc ; \
+	cp logo.gif $(PACKAGE)-$(VERSION).tar.gz /tmp/rpmb/SOURCES ; \
+	rpm --rcfile /tmp/rpmb/rc -bb rpm.spec ; \
+	cp /tmp/rpmb/RPMS/$$buildarch/*.rpm .
+	rm -rf /tmp/rpmb
+
+.PHONY: all install install-t1ascii install-t1binary install-t1asm \
+	install-t1disasm install-t1unmac srclinks \
+	versionize dist rpm clean mostlyclean distclean realclean
