@@ -47,33 +47,34 @@ hexval(char c)
    We allow an odd number of digits. Returns length of binary data. */
 
 static int
-translate_hex_string(char *s)
+translate_hex_string(char *s, char *saved_orphan)
 {
-  static char saved_orphan = 0;
-  int c1 = saved_orphan;
+  int c1 = *saved_orphan;
   char *start = s;
   char *t = s;
   for (; *s; s++) {
-    if (isspace(*s)) continue;
+    if (isspace(*s))
+      continue;
     if (c1) {
       *t++ = (hexval(c1) << 4) + hexval(*s);
       c1 = 0;
     } else
       c1 = *s;
   }
-  saved_orphan = c1;
+  *saved_orphan = c1;
   return t - start;
 }
 
 /* This function returns 1 if the string contains all '0's. */
 
 static int
-all_zeroes(char *string)
+all_zeroes(char *s)
 {
-  if (*string == '\0' || *string == '\n') return 0;
-  while (*string == '0')
-    string++;
-  return *string == '\0' || *string == '\n';
+  if (*s == '\0' || *s == '\n')
+    return 0;
+  while (*s == '0')
+    s++;
+  return *s == '\0' || *s == '\n';
 }
 
 /* This function handles the entire file. */
@@ -96,6 +97,7 @@ process_pfa(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
   char line[LINESIZE];
   int c = 0;
   int blocktyp = PFA_ASCII;
+  char saved_orphan = 0;
   
   while (c != EOF) {
     char *p = line;
@@ -109,8 +111,9 @@ process_pfa(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
     if (p == line + LINESIZE - 1)
       /* buffer overrun: don't append newline even if we have it */
       ungetc(c, ifp);
-    else if (c == '\r' && blocktyp == PFA_ASCII) {
-      /* change CR or CR/LF into LF */
+    else if (c == '\r' && blocktyp != PFA_BINARY) {
+      /* change CR or CR/LF into LF, unless reading binary data! (This
+         condition was wrong before, caused Thanh problems - 6.Mar.2001) */
       c = getc(ifp);
       if (c != '\n') ungetc(c, ifp);
       *p++ = '\n';
@@ -147,7 +150,7 @@ process_pfa(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
 	fr->output_ascii(line);
 	blocktyp = PFA_ASCII;
       } else if (blocktyp == PFA_HEX) {
-	int len = translate_hex_string(line);
+	int len = translate_hex_string(line, &saved_orphan);
 	if (len) fr->output_binary((unsigned char *)line, len);
       } else
 	fr->output_binary((unsigned char *)line, p - line);

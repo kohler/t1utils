@@ -1,5 +1,15 @@
 T1utils NEWS
 
+Version 1.22   6.Mar.2001
+
+* Fixed bug on processing PFA fonts with DOS line endings. The symptom was
+  t1binary producing strange/unusable fonts. Problem: the all-zeros line,
+  which signals the end of the font's binary section, was not being
+  recognized because of an extra '\r'. This has been a bug since version
+  1.13 -- chagrin! Problem reported by Han The Thanh
+  <thanh@informatics.muni.cz>.
+
+
 Version 1.21   9.Feb.2001
 
 * t1ascii, t1asm, t1unmac: Raised minimum PFA line length to 8. The Adobe
