@@ -1,0 +1,88 @@
+.TH T1DISASM 1  "5 Mar 1998"
+.SH NAME
+t1disasm \- disassemble type-1 font
+.SH SYNOPSIS
+.B t1disasm
+[
+.I input
+[
+.I output
+]
+]
+.SH DESCRIPTION
+.B t1disasm
+disassembles Adobe Type 1 font programs in either PFA (hexadecimal) or PFB
+(binary) formats into human-readable form. If the file
+.I output
+is not specified output goes to the standard output.
+If the file
+.I input
+is not specified input comes from the standard input.
+
+.B t1disasm
+performs eexec and charstring decryption as specified in the
+.I "Adobe Type 1 Font Format,"
+the ``black book''. Additionally, the charstring binary tokens are expanded
+into human-readable text form.
+.SH EXAMPLES
+.LP
+.nf
+% t1disasm Utopia-Regular.pfb Utopia-Regular.raw
+% t1disasm Utopia-Regular.pfa Utopia-Regular.raw
+.fi
+
+In
+.B Subrs
+entries in Utopia-Regular.raw will look like
+.RS
+.nf
+.ft B
+dup 5 {
+        8 111 vstem
+        -12 128 hstem
+        707 -20 hstem
+        return
+        } |
+.ft R
+.fi
+.RE
+and the
+.B CharStrings
+entries like
+.RS
+.nf
+.ft B
+/exclam {
+        58 242 hsbw
+        6 callsubr
+        5 4 callsubr
+        63 707 rmoveto
+        -54 0 -5 -22 4 -45 rrcurveto
+        40 -431 rlineto
+        29 hlineto
+        42 431 rlineto
+        4 45 -5 22 -55 0 rrcurveto
+        closepath
+        6 4 callsubr
+        -719 vmoveto
+        243 callsubr
+        endchar
+        } |-
+.ft R
+.fi
+.RE
+.SH "SEE ALSO"
+.LP
+.BR t1asm (1),
+.BR t1ascii (1),
+.BR t1binary (1),
+.BR t1unpost (1)
+.LP
+.I "Adobe Type 1 Font Format"
+.SH AUTHORS
+Lee Hetherington (ilh@lcs.mit.edu)
+.br
+Eddie Kohler (eddietwo@lcs.mit.edu)
+.PP
+Ported to Microsoft C/C++ Compiler and MS-DOS operating system by
+Kai-Uwe Herbing (herbing@netmbx.netmbx.de).

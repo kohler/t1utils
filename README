@@ -1,0 +1,88 @@
+This file documents version 1.5 of the t1utils package, originally
+by I. Lee Hetherington. What follows is largely his original README
+from 1992.
+
+####################################################################
+
+t1utils is a collection of simple type-1 font manipulation programs.
+Together, they allow you to convert between PFA (ASCII) and PFB
+(binary) formats, disassemble PFA or PFB files into human-readable
+form, reassemble them into PFA or PFB format.  Additionally you can
+extract font resources from a Macintosh font file (ATM/Laserwriter).
+
+There are currently five programs:
+
+t1ascii		converts PFB files to PFA format.
+
+t1binary	converts PFA files to PFB format.
+
+t1disasm	disassembles a type-1 font (PFA or PFB format) into a
+		raw, human-readable text form for subsequent hand
+		editing, tweaking, hint fixing, etc...
+
+t1asm		assembles type-1 font into PFA or PFB format from 
+		human-readable form produced by t1disasm.
+
+t1unmac		extracts POST resources from a Macintosh type-1 file
+		(ATM/Laserwriter) into PFA or PFB format for use
+		outside the Macintosh environment.  The Macintosh file
+		should be stored in MacBinary format or as a raw
+		resource fork.  Note that t1unmac does not have to run
+		on a Macintosh, but makes Macintosh type-1 fonts
+		available to Unix machines and PCs.
+
+...
+
+Thanks to Kai-Uwe Herbing (herbing@netmbx.netmbx.de) for the MS-DOS
+port (Microsoft C/C++ compiler).
+
+The copyright on all of the tools in t1utils looks like:
+
+	Copyright (c) 1992 by I. Lee Hetherington, all rights
+	reserved.
+	
+	Permission is hereby granted to use, modify, and distribute
+	this program for any purpose provided this copyright notice
+	and the one below remain intact.
+
+Note that these tools should not be used to illegally copy type-1 font
+programs.  Typeface design is an intricate art that should be
+rewarded.
+
+I. Lee Hetherington
+ilh@lcs.mit.edu
+
+####################################################################
+
+VERSION 1.5 NOTES
+=================
+
+   You need an ANSI C compiler, such as gcc.
+
+   Just type `./configure', then `make'. `make install' will build and
+install the utilities and their manual pages.
+
+   `./configure' accepts the usual options. See `INSTALL' for more
+details. The most commonly used option is `--prefix', which can be used
+to install the utilities in a place other than /usr/local.
+
+   Changes to version 1.5 (c) 1998 Eddie Kohler, under the same
+redistribution copyright as I. Lee Hetherington's.
+
+Differences from Version 1.2
+----------------------------
+* t1asm and t1disasm understand new commands introduced by Adobe for
+  the Type 2 charstring format. These commands are also used by multiple
+  master fonts with intermediate masters.
+    Note that t1asm and t1disasm can't actually be used on Type 2
+  charstrings because of other differences (e.g., four-byte numbers are
+  interpreted differently).
+
+* t1binary will behave properly on Type 1 fonts ported from Macintosh
+  PostScript files (originally a problem because of line endings).
+
+* All programs have been massaged to take long options and to understand
+  --help and --version options. The banners have been removed.
+
+Eddie Kohler
+eddietwo@lcs.mit.edu

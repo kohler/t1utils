@@ -1,0 +1,55 @@
+.TH T1UNMAC 1  "5 Mar 1998"
+.SH NAME
+t1unmac \- translate a Mac PostScript font into PFA or PFB format
+.SH SYNOPSIS
+.B t1unmac
+[
+.B \-a
+]
+[
+.B \-b
+]
+[
+.B \-r
+]
+.I input
+[
+.I output
+]
+.SH DESCRIPTION
+.B t1unmac
+extracts POST resources from a Macintosh PostScript font file and creates a
+PFA (hexadecimal) or PFB (binary) font file. The file
+.I input
+should be seekable and be in MacBinary (I or II) format or be a raw
+resource fork. If the file
+.I output
+is not specified output goes to the standard output.
+.SH OPTIONS
+.TP 5
+.BR \-\-pfa ", " \-a
+Output in PFA (ASCII) format.
+.TP 5
+.BR \-\-pfb ", " \-b
+Output in PFB (binary) format. This is the default. The block lengths are
+the same as the POST resource block lengths.
+.TP 5
+.BR \-\-raw ", " \-r
+Indicates that the input is a raw resource fork.
+.TP 5
+.BR \-\-macbinary
+Indicates that the input is in MacBinary I or II format. This is the
+default.
+.SH "SEE ALSO"
+.LP
+.BR t1ascii (1),
+.BR t1binary (1),
+.BR t1asm (1),
+.BR t1disasm (1)
+.SH AUTHORS
+Lee Hetherington (ilh@lcs.mit.edu)
+.br
+Eddie Kohler (eddietwo@lcs.mit.edu)
+.PP
+Ported to Microsoft C/C++ Compiler and MS-DOS operating system by
+Kai-Uwe Herbing (herbing@netmbx.netmbx.de).

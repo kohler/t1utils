@@ -1,0 +1,91 @@
+.TH T1ASM 1  "5 Mar 1998"
+.SH NAME
+t1asm \- assemble type-1 font
+.SH SYNOPSIS
+.B t1asm
+[
+.B -a
+]
+[
+.B -b
+]
+[
+.BI \-l " length"
+]
+[
+.I input
+[
+.I output
+]
+]
+.SH DESCRIPTION
+.B t1asm
+assembles Adobe Type 1 font programs into either PFA (hexadecimal) or PFB
+(binary) formats from a human-readable form. If the file
+.I output
+is not specified output goes to the standard output. If the file
+.I input
+is not specified input comes from the standard input.
+
+.B t1asm
+tokenizes the charstring data and performs eexec and charstring encryption
+as specified in the
+.I "Adobe Type 1 Font Format,"
+the ``black book''.
+
+The input must have a line of the form
+.RS
+.nf
+.ft B
+/-|{string currentfile exch readstring pop}executeonly def
+.ft R
+.fi
+.RE
+which defines the command, in this case `\-|', that is to start charstring
+data. It is an error not to define such a command. Another common name for
+this command is `RD'.
+
+After the start of the
+.B Subrs
+array in the input, all open braces `{' not in a comment begin a
+charstring. Such a charstring is terminated by the next non-comment close
+brace `}'. Within such a charstring, only comments, integers, and valid
+charstring commands are allowed. The format within a charstring is
+unimportant as long as integers and commands are separated by at least a
+one whitespace (space, tab, newling) character. Note that within
+charstrings, comments are discarded because they cannot be encoded.
+.SH OPTIONS
+.TP 5
+.BR \-\-pfa ", " \-a
+Output in PFA (ASCII) format.
+.TP 5
+.BR \-\-pfb ", " \-b
+Output in PFB (binary) format. This is the default.
+.TP
+.BI \-\-block\-length= "num\fR, " \-l " num"
+Set the maximum length of sections in PFB output to
+.I length.
+The default value is large, 2**17 - 6, yielding a section size, including
+section header, of 128 Kbytes. This default value is also the maximum
+allowable length.
+.SH EXAMPLES
+.LP
+.nf
+% t1asm Utopia-Regular.raw Utopia-Regular.pfb
+% t1asm -a Utopia-Regular.raw Utopia-Regular.pfa
+.fi
+.SH "SEE ALSO"
+.LP
+.BR t1disasm (1),
+.BR t1ascii (1),
+.BR t1binary (1),
+.BR t1unmac (1)
+.LP
+.I "Adobe Type 1 Font Format"
+.SH AUTHORS
+Lee Hetherington (ilh@lcs.mit.edu)
+.br
+Eddie Kohler (eddietwo@lcs.mit.edu)
+.PP
+Ported to Microsoft C/C++ Compiler and MS-DOS operating system by
+Kai-Uwe Herbing (herbing@netmbx.netmbx.de).

@@ -1,0 +1,93 @@
+# Makefile.in for type-1 utilities (t1utils)
+#
+# author: I. Lee Hetherington (ilh@lcs.mit.edu)
+# modified by Eddie Kohler (eddietwo@mit.edu)
+
+PACKAGE		= t1utils
+VERSION		= @VERSION@
+
+.SUFFIXES:
+.SUFFIXES: .c .o
+
+.c.o:
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
+
+SHELL		= /bin/sh
+prefix		= @prefix@
+exec_prefix	= @exec_prefix@
+VPATH		= @srcdir@
+srcdir		= @srcdir@
+# Directory to install programs in.
+bindir		= @bindir@
+# Directory to install man pages in.
+mandir		= @mandir@/man$(manext)
+# Number to put on the man page filename.
+manext		= 1
+
+CC		= @CC@ $(PROFILING)
+CCLINKER	= @CC@ $(PROFILING)
+CFLAGS		= @CFLAGS@
+CPPFLAGS	= @DEFS@ -DVERSION=\"$(VERSION)\"
+PROFILING	= 
+LDFLAGS		= @LDFLAGS@
+
+INSTALL		= @INSTALL@
+INSTALL_PROGRAM	= @INSTALL_PROGRAM@
+INSTALL_DATA	= @INSTALL_DATA@
+
+PROGRAMS	= t1ascii t1binary t1disasm t1asm t1unmac
+INSTALLERS	= install-t1ascii install-t1binary install-t1disasm \
+		install-t1asm install-t1unmac
+
+all: $(PROGRAMS)
+
+t1ascii: t1ascii.o clp.o
+	$(CCLINKER) $(CFLAGS) -o t1ascii t1ascii.o clp.o
+t1binary: t1binary.o clp.o
+	$(CCLINKER) $(CFLAGS) -o t1binary t1binary.o clp.o
+t1disasm: t1disasm.o clp.o
+	$(CCLINKER) $(CFLAGS) -o t1disasm t1disasm.o clp.o
+t1asm: t1asm.o clp.o
+	$(CCLINKER) $(CFLAGS) -o t1asm t1asm.o clp.o
+t1unmac: t1unmac.o clp.o
+	$(CCLINKER) $(CFLAGS) -o t1unmac t1unmac.o clp.o
+
+install: $(INSTALLERS)
+
+install-t1ascii: t1ascii t1ascii.man
+	$(INSTALL_PROGRAM) t1ascii $(bindir)/t1ascii
+	-$(INSTALL_DATA) t1ascii.man $(mandir)/t1ascii.$(manext)
+install-t1binary: t1binary t1binary.man
+	$(INSTALL_PROGRAM) t1binary $(bindir)/t1binary
+	-$(INSTALL_DATA) t1binary.man $(mandir)/t1binary.$(manext)
+install-t1disasm: t1disasm t1disasm.man
+	$(INSTALL_PROGRAM) t1disasm $(bindir)/t1disasm
+	-$(INSTALL_DATA) t1disasm.man $(mandir)/t1disasm.$(manext)
+install-t1asm: t1asm t1asm.man
+	$(INSTALL_PROGRAM) t1asm $(bindir)/t1asm
+	-$(INSTALL_DATA) t1asm.man $(mandir)/t1asm.$(manext)
+install-t1unmac: t1unmac t1unmac.man
+	$(INSTALL_PROGRAM) t1unmac $(bindir)/t1unmac
+	-$(INSTALL_DATA) t1unmac.man $(mandir)/t1unmac.$(manext)
+
+#####
+# Cleaning and distribution
+
+clean:
+	rm -f $(PROGRAMS) *.o core
+mostlyclean: clean
+distclean: mostlyclean
+	rm -f Makefile config.status config.log config.cache
+realclean: distclean
+
+dist: mostlyclean
+	rm -rf $(PACKAGE)-$(VERSION)
+	mkdir $(PACKAGE)-$(VERSION) && chmod 0777 $(PACKAGE)-$(VERSION)
+	cp INSTALL Makefile.in README configure configure.in install-sh \
+	clp.c clp.h \
+	t1ascii.c t1ascii.man t1binary.c t1binary.man \
+	t1asm.c t1asm.man t1disasm.c t1disasm.man \
+	t1unmac.c t1unmac.man \
+	$(PACKAGE)-$(VERSION)
+	gtar czf $(PACKAGE)-$(VERSION).tar.gz $(PACKAGE)-$(VERSION)
+	rm -r $(PACKAGE)-$(VERSION)
