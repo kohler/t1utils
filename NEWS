@@ -4,6 +4,8 @@ Version 1.xx
 
 * t1ascii, t1asm, t1unmac: Use lowercase hex digits instead of uppercase.
 
+* t1unmac: Added `--line-length' option for PFA output.
+
 
 Version 1.11   29.May.1999
 

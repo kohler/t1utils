@@ -56,6 +56,8 @@ typedef int int32;
 typedef long int32;
 #endif
 
+static int line_length = 64;
+
 void fatal_error(char *message, ...);
 
 /* Some functions to read one, two, three, and four byte integers in 68000
@@ -134,7 +136,7 @@ output_hex_byte(FILE *fo, int b)
 {
   static char *hex = "0123456789abcdef";
   
-  if (hex_column > 62) {	/* 64 column output */
+  if (hex_column >= line_length) {
     putc('\n', fo);
     hex_column = 0;
   }
@@ -220,9 +222,11 @@ extract_data(FILE *fi, FILE *fo, int32 offset, int binary)
 #define PFA_OPT		305
 #define MACBINARY_OPT	306
 #define RAW_OPT		307
+#define LINE_LEN_OPT	308
 
 static Clp_Option options[] = {
   { "help", 0, HELP_OPT, 0, 0 },
+  { "line-length", 'l', LINE_LEN_OPT, Clp_ArgUnsigned, 0 },
   { "macbinary", 0, MACBINARY_OPT, 0, Clp_Negate },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
   { "pfa", 'a', PFA_OPT, 0, 0 },
@@ -278,6 +282,7 @@ Options:\n\
   -a, --pfa                     Output font in ASCII (PFA) format.\n\
   -b, --pfb                     Output font in binary (PFB) format. This is\n\
                                 the default.\n\
+  -l, --line-length=N           Set line length for PFA output.\n\
   -o, --output=FILE             Write output to FILE.\n\
   -h, --help                    Print this message and exit.\n\
       --version                 Print version number and warranty and exit.\n\
@@ -330,6 +335,17 @@ main(int argc, char **argv)
       
      case PFA_OPT:
       binary = 0;
+      break;
+      
+     case LINE_LEN_OPT:
+      line_length = clp->val.i;
+      if (line_length < 2) {
+	line_length = 2;
+	error("warning: line length raised to %d", line_length);
+      } else if (line_length > 1024) {
+	line_length = 1024;
+	error("warning: line length lowered to %d", line_length);
+      }
       break;
       
      case HELP_OPT:
