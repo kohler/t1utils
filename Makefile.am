@@ -4,12 +4,18 @@ AUTOMAKE_OPTIONS = foreign check-news
 bin_PROGRAMS = t1ascii t1binary t1asm t1disasm t1unmac t1mac
 man_MANS = t1ascii.1 t1binary.1 t1asm.1 t1disasm.1 t1unmac.1 t1mac.1
 
-t1ascii_SOURCES = include/lcdf/clp.h clp.c t1lib.h t1lib.c t1ascii.c
-t1binary_SOURCES = include/lcdf/clp.h clp.c t1lib.h t1lib.c t1binary.c
-t1asm_SOURCES = include/lcdf/clp.h clp.c t1lib.h t1lib.c t1asm.c
-t1disasm_SOURCES = include/lcdf/clp.h clp.c t1lib.h t1lib.c t1disasm.c
-t1unmac_SOURCES = include/lcdf/clp.h clp.c t1lib.h t1lib.c t1unmac.c
-t1mac_SOURCES = include/lcdf/clp.h clp.c t1lib.h t1lib.c t1mac.c
+t1ascii_SOURCES = include/lcdf/clp.h include/lcdf/inttypes.h \
+	clp.c t1lib.h t1lib.c t1ascii.c
+t1binary_SOURCES = include/lcdf/clp.h include/lcdf/inttypes.h \
+	clp.c t1lib.h t1lib.c t1binary.c
+t1asm_SOURCES = include/lcdf/clp.h include/lcdf/inttypes.h \
+	clp.c t1lib.h t1lib.c t1asm.c
+t1disasm_SOURCES = include/lcdf/clp.h include/lcdf/inttypes.h \
+	clp.c t1lib.h t1lib.c t1disasm.c
+t1unmac_SOURCES = include/lcdf/clp.h include/lcdf/inttypes.h \
+	clp.c t1lib.h t1lib.c t1unmac.c
+t1mac_SOURCES = include/lcdf/clp.h include/lcdf/inttypes.h \
+	clp.c t1lib.h t1lib.c t1mac.c
 
 AM_CPPFLAGS = -I$(top_srcdir)/include
 LDADD = @LIBOBJS@
@@ -18,7 +24,7 @@ EXTRA_DIST = $(man_MANS) t1utils.spec
 
 srclinks:
 	cd $(top_srcdir); test -d include/lcdf || mkdir -p include/lcdf
-	cd $(top_srcdir); for i in clp.h; do \
+	cd $(top_srcdir); for i in clp.h inttypes.h; do \
 	ln -sf ~/src/liblcdf/include/lcdf/$$i include/lcdf/$$i; done
 	cd $(top_srcdir); for i in clp.c strerror.c; do \
 	ln -sf ~/src/liblcdf/liblcdf/$$i $$i; done

@@ -607,12 +607,12 @@ Report bugs to <kohler@icir.org>.\n", program_name);
 #endif
 
 
-int main(int argc, char **argv)
+int main(int argc, char *argv[])
 {
   char *p, *q, *r;
   
   Clp_Parser *clp =
-    Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
+    Clp_NewParser(argc, (const char * const *)argv, sizeof(options) / sizeof(options[0]), options);
   program_name = (char *)Clp_ProgramName(clp);
   
   /* interpret command line arguments using CLP */

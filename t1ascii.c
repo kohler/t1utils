@@ -180,14 +180,14 @@ pfa_output_end()
  **/
 
 int
-main(int argc, char **argv)
+main(int argc, char *argv[])
 {
   struct font_reader fr;
   int c;
   FILE *ifp = 0;
   
   Clp_Parser *clp =
-    Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
+    Clp_NewParser(argc, (const char * const *)argv, sizeof(options) / sizeof(options[0]), options);
   program_name = (char *)Clp_ProgramName(clp);
   
   /* interpret command line arguments using CLP */

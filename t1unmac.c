@@ -545,7 +545,7 @@ check_binhex(FILE *f)
 
 
 int
-main(int argc, char **argv)
+main(int argc, char *argv[])
 {
   FILE *ifp = 0;
   FILE *ofp = 0;
@@ -557,7 +557,7 @@ main(int argc, char **argv)
   int raw = 0, appledouble = 0, binhex = 0, macbinary = 0;
   
   Clp_Parser *clp =
-    Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
+    Clp_NewParser(argc, (const char * const *)argv, sizeof(options) / sizeof(options[0]), options);
   program_name = (char *)Clp_ProgramName(clp);
   
   /* interpret command line arguments using CLP */
