@@ -227,11 +227,11 @@ extract_data(FILE *fi, FILE *fo, int32 offset, int binary)
 static Clp_Option options[] = {
   { "help", 0, HELP_OPT, 0, 0 },
   { "line-length", 'l', LINE_LEN_OPT, Clp_ArgUnsigned, 0 },
-  { "macbinary", 0, MACBINARY_OPT, 0, Clp_Negate },
+  { "macbinary", 0, MACBINARY_OPT, 0, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
   { "pfa", 'a', PFA_OPT, 0, 0 },
   { "pfb", 'b', PFB_OPT, 0, 0 },
-  { "raw", 'r', RAW_OPT, 0, Clp_Negate },
+  { "raw", 'r', RAW_OPT, 0, 0 },
   { "version", 0, VERSION_OPT, 0, 0 },
 };
 static char *program_name;
@@ -290,15 +290,139 @@ Options:\n\
 Report bugs to <eddietwo@lcs.mit.edu>.\n", program_name);
 }
 
+
+/*
+ * CRC computation logic
+ * 
+ * The logic for this method of calculating the CRC 16 bit polynomial is taken
+ * from an article by David Schwaderer in the April 1985 issue of PC Tech
+ * Journal.
+ */
+
+static short      crctab[] =    /* CRC lookup table */
+{
+ 0x0000, 0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241,
+ 0xC601, 0x06C0, 0x0780, 0xC741, 0x0500, 0xC5C1, 0xC481, 0x0440,
+ 0xCC01, 0x0CC0, 0x0D80, 0xCD41, 0x0F00, 0xCFC1, 0xCE81, 0x0E40,
+ 0x0A00, 0xCAC1, 0xCB81, 0x0B40, 0xC901, 0x09C0, 0x0880, 0xC841,
+ 0xD801, 0x18C0, 0x1980, 0xD941, 0x1B00, 0xDBC1, 0xDA81, 0x1A40,
+ 0x1E00, 0xDEC1, 0xDF81, 0x1F40, 0xDD01, 0x1DC0, 0x1C80, 0xDC41,
+ 0x1400, 0xD4C1, 0xD581, 0x1540, 0xD701, 0x17C0, 0x1680, 0xD641,
+ 0xD201, 0x12C0, 0x1380, 0xD341, 0x1100, 0xD1C1, 0xD081, 0x1040,
+ 0xF001, 0x30C0, 0x3180, 0xF141, 0x3300, 0xF3C1, 0xF281, 0x3240,
+ 0x3600, 0xF6C1, 0xF781, 0x3740, 0xF501, 0x35C0, 0x3480, 0xF441,
+ 0x3C00, 0xFCC1, 0xFD81, 0x3D40, 0xFF01, 0x3FC0, 0x3E80, 0xFE41,
+ 0xFA01, 0x3AC0, 0x3B80, 0xFB41, 0x3900, 0xF9C1, 0xF881, 0x3840,
+ 0x2800, 0xE8C1, 0xE981, 0x2940, 0xEB01, 0x2BC0, 0x2A80, 0xEA41,
+ 0xEE01, 0x2EC0, 0x2F80, 0xEF41, 0x2D00, 0xEDC1, 0xEC81, 0x2C40,
+ 0xE401, 0x24C0, 0x2580, 0xE541, 0x2700, 0xE7C1, 0xE681, 0x2640,
+ 0x2200, 0xE2C1, 0xE381, 0x2340, 0xE101, 0x21C0, 0x2080, 0xE041,
+ 0xA001, 0x60C0, 0x6180, 0xA141, 0x6300, 0xA3C1, 0xA281, 0x6240,
+ 0x6600, 0xA6C1, 0xA781, 0x6740, 0xA501, 0x65C0, 0x6480, 0xA441,
+ 0x6C00, 0xACC1, 0xAD81, 0x6D40, 0xAF01, 0x6FC0, 0x6E80, 0xAE41,
+ 0xAA01, 0x6AC0, 0x6B80, 0xAB41, 0x6900, 0xA9C1, 0xA881, 0x6840,
+ 0x7800, 0xB8C1, 0xB981, 0x7940, 0xBB01, 0x7BC0, 0x7A80, 0xBA41,
+ 0xBE01, 0x7EC0, 0x7F80, 0xBF41, 0x7D00, 0xBDC1, 0xBC81, 0x7C40,
+ 0xB401, 0x74C0, 0x7580, 0xB541, 0x7700, 0xB7C1, 0xB681, 0x7640,
+ 0x7200, 0xB2C1, 0xB381, 0x7340, 0xB101, 0x71C0, 0x7080, 0xB041,
+ 0x5000, 0x90C1, 0x9181, 0x5140, 0x9301, 0x53C0, 0x5280, 0x9241,
+ 0x9601, 0x56C0, 0x5780, 0x9741, 0x5500, 0x95C1, 0x9481, 0x5440,
+ 0x9C01, 0x5CC0, 0x5D80, 0x9D41, 0x5F00, 0x9FC1, 0x9E81, 0x5E40,
+ 0x5A00, 0x9AC1, 0x9B81, 0x5B40, 0x9901, 0x59C0, 0x5880, 0x9841,
+ 0x8801, 0x48C0, 0x4980, 0x8941, 0x4B00, 0x8BC1, 0x8A81, 0x4A40,
+ 0x4E00, 0x8EC1, 0x8F81, 0x4F40, 0x8D01, 0x4DC0, 0x4C80, 0x8C41,
+ 0x4400, 0x84C1, 0x8581, 0x4540, 0x8701, 0x47C0, 0x4680, 0x8641,
+ 0x8201, 0x42C0, 0x4380, 0x8341, 0x4100, 0x81C1, 0x8081, 0x4040
+};
+
+/*
+ * Update a CRC check on the given buffer.
+ */
+
+int
+crcbuf(crc, len, buf)
+        register int    crc;    /* running CRC value */
+        register u_int  len;
+        register u_char *buf;
+{
+        register u_int  i;
+
+        for (i=0; i<len; i++)
+                crc = ((crc >> 8) & 0xff) ^ crctab[(crc ^ *buf++) & 0xff];
+        
+        return (crc);
+}
+
+
+static const char *
+check_macbinary(FILE *ifp)
+{
+  int i, j;
+  char buf[124];
+
+  /* check "version" bytes at offsets 0 and 74 */
+  reposition(ifp, 0);
+  if (read_one(ifp) != 0)
+    return "bad version byte";
+  reposition(ifp, 74);
+  if (read_one(ifp) != 0)
+    return "bad version byte";
+
+  /* check file length */
+  reposition(ifp, 1);
+  i = read_one(ifp);
+  if (i > 63)
+    return "bad length";
+  reposition(ifp, 83);
+  i = read_four(ifp);
+  j = read_four(ifp);
+  if (i < 0 || j < 0 || i >= 0x800000 || j >= 0x800000)
+    return "bad length";
+
+  /* check reserved area */
+  for (i = 101; i < 116; i++) {
+    reposition(ifp, i);
+    if (read_one(ifp) != 0)
+      return "bad reserved area";
+  }
+
+  /* check CRC */
+  reposition(ifp, 0);
+  fread(buf, 1, 124, ifp);
+  if (crcbuf(0, 124, buf) != read_two(ifp)) {
+    reposition(ifp, 82);
+    if (read_one(ifp) != 0)
+      return "bad checksum";
+  }
+
+  return 0;
+}
+
+#define APPLESINGLE_MAGIC 0x00051600
+#define APPLEDOUBLE_MAGIC 0x00051607
+
+const char *
+check_appledouble(FILE *ifp)
+{
+  int i;
+  reposition(ifp, 0);
+  i = read_four(ifp);
+  if (i != APPLEDOUBLE_MAGIC && i != APPLESINGLE_MAGIC)
+    return "bad magic number";
+
+  return 0;
+}
+
 int
 main(int argc, char **argv)
 {
   FILE *ifp = 0;
   FILE *ofp = 0;
-  int32 data_fork_size;
+  const char *ifp_name = "<stdin>";
   int32 res_offset, res_data_offset, res_map_offset, type_list_offset;
   int32 post_type;
-  int num_types, num_of_type, num_extracted = 0, binary = 1, raw = 0;
+  int num_types, num_of_type, num_extracted = 0, binary = 1;
+  int raw = 0, macbinary = 0, appledouble = 0;
   
   Clp_Parser *clp =
     Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
@@ -310,11 +434,13 @@ main(int argc, char **argv)
     switch (opt) {
       
      case RAW_OPT:
-      raw = clp->negated ? 0 : 1;
+      raw = 1;
+      macbinary = appledouble = 0;
       break;
       
      case MACBINARY_OPT:
-      raw = clp->negated ? 1 : 0;
+      macbinary = 1;
+      raw = appledouble = 0;
       break;
       
      output_file:
@@ -370,6 +496,7 @@ particular purpose.\n");
       if (strcmp(clp->arg, "-") == 0)
 	ifp = stdin;
       else {
+	ifp_name = clp->arg;
 	ifp = fopen(clp->arg, "rb");
 	if (!ifp) fatal_error("%s: %s", clp->arg, strerror(errno));
       }
@@ -400,25 +527,46 @@ particular purpose.\n");
   
   /* check for non-seekable input */
   if (fseek(ifp, 0, 0))
-    fatal_error("input file isn't seekable\n\
-  (I can't read from stdin; give me a filename on the command line instead.)");
+    fatal_error("%s: isn't seekable\n\
+  (I can't read from stdin; give me a filename on the command line instead.)",
+		ifp_name);
   
   /* check for empty file */
   fseek(ifp, 0, 2);
   if (ftell(ifp) == 0)
-    fatal_error("input file is empty\n\
-  (Try re-transferring the files using MacBinary format.)");
-  
+    fatal_error("%s: empty file\n\
+  (Try re-transferring the files using MacBinary format.)",
+		ifp_name);
+
+  if (!raw && !macbinary && !appledouble) {
+    /* check magic number, try to figure out what it is */
+    reposition(ifp, 0);
+    switch (read_four(ifp)) {
+
+     case APPLESINGLE_MAGIC:
+     case APPLEDOUBLE_MAGIC:
+      appledouble = 1;
+      break;
+
+     default:
+      macbinary = 1;
+      break;
+
+    }
+  }
+    
   if (raw) {
     /* raw resource file */
     res_offset = 0;
     
-  } else {
-    /* MacBinary (I or II) file */
-    
-    /* SHOULD CHECK INTEGRITY OF MACBINARY HEADER HERE TO VERIFY THAT WE
-       REALLY HAVE A MACBINARY FILE.  MACBINARY-II-STANDARD.TXT DESCRIBES
-       AN APPROPRIATE VERIFICATION PROCEDURE. */
+  } else if (macbinary) {	/* MacBinary (I or II) file */
+    const char *check;
+    int32 data_fork_size;
+
+    /* check integrity of file */
+    check = check_macbinary(ifp);
+    if (check)
+      fatal_error("%s: not a MacBinary file (%s)", ifp_name, check);
     
     /* read data and resource fork sizes in MacBinary header */
     reposition(ifp, 83);
@@ -430,6 +578,42 @@ particular purpose.\n");
       data_fork_size += 128 - data_fork_size % 128;
     
     res_offset = 128 + data_fork_size;
+
+  } else if (appledouble) {	/* AppleDouble file */
+    const char *check;
+    const char *applewhat;
+    int i, n;
+
+    /* check integrity of file */
+    check = check_appledouble(ifp);
+    if (check)
+      fatal_error("%s: not an AppleDouble file (%s)", ifp_name, check);
+    reposition(ifp, 0);
+    if (read_four(ifp) == APPLESINGLE_MAGIC)
+      applewhat = "AppleSingle";
+    else
+      applewhat = "AppleDouble";
+    
+    /* find offset to resource and/or data fork */
+    reposition(ifp, 24);
+    n = read_two(ifp);
+    res_offset = -1;
+    for (i = 0; i < n; i++) {
+      int type = read_four(ifp);
+      if (type == 0)
+	fatal_error("%s: bad %s file (bad entry descriptor)", ifp_name, applewhat);
+      if (type == 2)
+	res_offset = read_four(ifp);
+      else
+	(void) read_four(ifp);
+      (void) read_four(ifp);
+    }
+    if (res_offset < 0)
+      fatal_error("%s: bad %s file (no resource fork)", ifp_name, applewhat);
+    
+  } else {
+    fatal_error("%s: can't read strange format", ifp_name);
+    exit(1);
   }
   
   /* read offsets from resource fork header */

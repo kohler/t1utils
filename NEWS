@@ -1,5 +1,12 @@
 T1utils NEWS
 
+Version 1.16   25.Apr.2000
+
+* t1unmac: Supports AppleSingle and AppleDouble files with the
+  `--applesingle/double' option. Requested by Kent Boortz
+  <kent@erix.ericsson.se>.
+
+
 Version 1.15   4.Apr.2000
 
 * t1ascii, t1binary, and t1disasm: Fixed bad error message.
