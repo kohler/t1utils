@@ -1,4 +1,4 @@
-/* t1asm
+/* t1asm	-*- c-basic-offset: 2 -*-
  *
  * This program `assembles' Adobe Type-1 font programs in pseudo-PostScript
  * form into either PFB or PFA format.  The human readable/editable input is
@@ -643,7 +643,7 @@ int main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("t1asm (LCDF t1utils) %s\n", VERSION);
-      printf("Copyright (C) 1992-2001 I. Lee Hetherington, Eddie Kohler et al.\n\
+      printf("Copyright (C) 1992-2002 I. Lee Hetherington, Eddie Kohler et al.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -752,9 +752,22 @@ particular purpose.\n");
       else if ((p = strstr(line, "/CharStrings")) && isdigit(p[13]))
 	ever_active = active = 1;
     }
-    if (strstr(line, "currentfile closefile")) {
+    if ((p = strstr(line, "currentfile closefile"))) {
       /* 2/14/99 -- happy Valentine's day! -- don't look for `mark
 	 currentfile closefile'; the `mark' might be on a different line */
+      /* 1/3/2002 -- happy new year! -- Luc Devroye reports a failure with
+         some printers when `currentfile closefile' is followed by space */
+      p += sizeof("currentfile closefile") - 1;
+      for (q = p; isspace(*q) && *q != '\n'; q++)
+	/* nada */;
+      if (q == p && !*q)
+	error("warning: `currentfile closefile' line too long");
+      else if (q != p) {
+	if (*q != '\n')
+	  error("text after `currentfile closefile' ignored");
+	*p++ = '\n';
+	*p++ = '\0';
+      }
       eexec_string(line);
       break;
     }

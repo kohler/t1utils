@@ -1,5 +1,11 @@
 T1utils NEWS
 
+Version 1.25   3.Jan.2002
+
+* t1asm: Beware extra characters after `currentfile closefile'. Reported by
+  Luc Devroye <luc@cs.mcgill.ca>.
+
+
 Version 1.24   6.Sep.2001
 
 * Fixed compilation bugs on various platforms reported by Nelson H. F.
