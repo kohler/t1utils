@@ -121,7 +121,7 @@ static Clp_Option options[] = {
 static char *program_name;
 
 void
-fatal_error(char *message, ...)
+fatal_error(const char *message, ...)
 {
   va_list val;
   va_start(val, message);
@@ -132,7 +132,7 @@ fatal_error(char *message, ...)
 }
 
 void
-error(char *message, ...)
+error(const char *message, ...)
 {
   va_list val;
   va_start(val, message);

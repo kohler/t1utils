@@ -75,8 +75,8 @@ static int blocktyp = ASCII;
 
 static int binary_blocks_written = 0;
 
-void fatal_error(char *message, ...);
-void error(char *message, ...);
+void fatal_error(const char *message, ...);
+void error(const char *message, ...);
 
 
 /* This function flushes a buffered PFB block. */
@@ -201,7 +201,7 @@ static char *program_name;
 
 
 void
-fatal_error(char *message, ...)
+fatal_error(const char *message, ...)
 {
   va_list val;
   va_start(val, message);
@@ -211,9 +211,8 @@ fatal_error(char *message, ...)
   exit(1);
 }
 
-
 void
-error(char *message, ...)
+error(const char *message, ...)
 {
   va_list val;
   va_start(val, message);

@@ -1,4 +1,4 @@
-/* t1binary
+/* t1lib
  *
  * This file contains functions for reading PFA and PFB files.
  *
@@ -14,6 +14,8 @@
 # include <config.h>
 #endif
 #include <stdio.h>
+#include <ctype.h>
+#include <string.h>
 #include "t1lib.h"
 #define LINESIZE 512
 
@@ -132,7 +134,6 @@ process_pfb(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
   int blocktyp = 0;
   int block_len = 0;
   int c = 0;
-  int nblocks = 0;
   int filepos = 0;
   char line[LINESIZE + 1];
   
@@ -143,7 +144,7 @@ process_pfb(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
       if (c != MARKER
 	  || (blocktyp != ASCII && blocktyp != BINARY && blocktyp != DONE)) {
 	if (c == EOF || blocktyp == EOF)
-	  error("%s corrupted: no end-of-file marker");
+	  error("%s corrupted: no end-of-file marker", ifp_filename);
 	else
 	  error("%s corrupted: bad block marker at position %d",
 		ifp_filename, filepos);
