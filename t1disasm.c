@@ -364,7 +364,8 @@ eexec_line(unsigned char *line, int line_len)
   /* Look for charstring start */
   
   /* skip first word */
-  for (pos = 0; pos < line_len && !isspace(line[pos]); pos++) ;
+  for (pos = 0; pos < line_len && isspace(line[pos]); pos++) ;
+  while (pos < line_len && !isspace(line[pos])) pos++;
   if (pos >= line_len) goto not_charstring;
   
   /* skip spaces */
