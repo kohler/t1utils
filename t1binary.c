@@ -11,7 +11,8 @@
  *
  * I. Lee Hetherington (ilh@lcs.mit.edu)
  *
- * The 1.5 versions are maintained by eddietwo@lcs.mit.edu.
+ * 1.5 and later versions contain changes by, and are maintained by,
+ * Eddie Kohler <eddietwo@lcs.mit.edu>.
  *
  * Old change log:
  *
@@ -79,14 +80,14 @@ static void output_block()
   int32 i;
 
   /* output four-byte block length */
-  fputc((int)(blockpos & 0xff), ofp);
-  fputc((int)((blockpos >> 8) & 0xff), ofp);
-  fputc((int)((blockpos >> 16) & 0xff), ofp);
-  fputc((int)((blockpos >> 24) & 0xff), ofp);
+  putc((int)(blockpos & 0xff), ofp);
+  putc((int)((blockpos >> 8) & 0xff), ofp);
+  putc((int)((blockpos >> 16) & 0xff), ofp);
+  putc((int)((blockpos >> 24) & 0xff), ofp);
 
   /* output block data */
   for (i = 0; i < blockpos; i++)
-    fputc(blockbuf[i], ofp);
+    putc(blockbuf[i], ofp);
 
   /* mark block buffer empty and uninitialized */
   blockpos =  -1;
@@ -101,8 +102,8 @@ static void output_block()
 static void output_byte(byte b)
 {
   if (blockpos < 0) {
-    fputc(MARKER, ofp);
-    fputc(blocktyp, ofp);
+    putc(MARKER, ofp);
+    putc(blocktyp, ofp);
     blockpos = 0;
   }
   blockbuf[blockpos++] = b;
@@ -198,10 +199,10 @@ static void process(FILE *ifp, FILE *ofp)
   int c = 0;
   while (c != EOF) {
     char *p = line;
-    c = fgetc(ifp);
+    c = getc(ifp);
     while (c != EOF && c != '\r' && c != '\n' && p < line + LINESIZE - 1) {
       *p++ = c;
-      c = fgetc(ifp);
+      c = getc(ifp);
     }
 
     /* handle the end of the line */
@@ -210,7 +211,7 @@ static void process(FILE *ifp, FILE *ofp)
       ungetc(c, ifp);
     else if (c == '\r') {
       /* change CR or CR/LF into LF */
-      c = fgetc(ifp);
+      c = getc(ifp);
       if (c != '\n') ungetc(c, ifp);
       *p++ = '\n';
     } else if (c == '\n')
@@ -220,8 +221,8 @@ static void process(FILE *ifp, FILE *ofp)
     handle_line(line);
   }
   output_block();
-  fputc(MARKER, ofp);
-  fputc(DONE, ofp);
+  putc(MARKER, ofp);
+  putc(DONE, ofp);
 }
 
 
@@ -251,7 +252,7 @@ fatal_error(char *message, ...)
   va_start(val, message);
   fprintf(stderr, "%s: ", program_name);
   vfprintf(stderr, message, val);
-  fputc('\n', stderr);
+  putc('\n', stderr);
   exit(1);
 }
 
@@ -263,7 +264,7 @@ error(char *message, ...)
   va_start(val, message);
   fprintf(stderr, "%s: ", program_name);
   vfprintf(stderr, message, val);
-  fputc('\n', stderr);
+  putc('\n', stderr);
 }
 
 
@@ -381,7 +382,7 @@ particular purpose.\n");
   #endif
 
   /* peek at first byte to see if it is the PFB marker 0x80 */
-  c = fgetc(ifp);
+  c = getc(ifp);
   if (c == MARKER) {
     fprintf(stderr,
 	    "error: input may already be binary (starts with 0x80)\n");

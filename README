@@ -1,6 +1,21 @@
-This file documents version 1.5.3 of the t1utils package, originally
-by I. Lee Hetherington. What follows is largely his original README
-from 1992.
+T1UTILS VERSION 1.7 NOTES
+=========================
+
+   You need an ANSI C compiler, such as gcc.
+
+   Just type `./configure', then `make'. `make install' will build and
+install the utilities and their manual pages.
+
+   `./configure' accepts the usual options. See `INSTALL' for more
+details. The most commonly used option is `--prefix', which can be used
+to install the utilities in a place other than /usr/local.
+
+   Changes since version 1.2 (c) 1998 Eddie Kohler, under the same
+redistribution copyright as I. Lee Hetherington's. See below for I. Lee
+Hetherington's original README from 1992.
+
+Eddie Kohler
+eddietwo@lcs.mit.edu
 
 ####################################################################
 
@@ -53,21 +68,3 @@ I. Lee Hetherington
 ilh@lcs.mit.edu
 
 ####################################################################
-
-VERSION 1.5.3 NOTES
-===================
-
-   You need an ANSI C compiler, such as gcc.
-
-   Just type `./configure', then `make'. `make install' will build and
-install the utilities and their manual pages.
-
-   `./configure' accepts the usual options. See `INSTALL' for more
-details. The most commonly used option is `--prefix', which can be used
-to install the utilities in a place other than /usr/local.
-
-   Changes to version 1.5.3 (c) 1998 Eddie Kohler, under the same
-redistribution copyright as I. Lee Hetherington's.
-
-Eddie Kohler
-eddietwo@lcs.mit.edu

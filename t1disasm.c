@@ -15,7 +15,8 @@
  *
  * I. Lee Hetherington (ilh@lcs.mit.edu)
  *
- * The 1.5 versions are maintained by eddietwo@lcs.mit.edu.
+ * 1.5 and later versions contain changes by, and are maintained by,
+ * Eddie Kohler <eddietwo@lcs.mit.edu>.
  *
  * Old change log:
  * 
@@ -686,7 +687,7 @@ particular purpose.\n");
      output (rest is garbage). */
   
   *cs_start = 0;
-  for (;;) {
+  while (1) {
     egetline();
     if (line[0] == '\0')
       break;
@@ -699,17 +700,15 @@ particular purpose.\n");
     if (strcmp(line, "mark currentfile closefile\n") == 0)
       break;
     }
-
+  
   /* Final wrap-up: check for any PostScript after the cleartomark. */
   final_ascii = 1;
   while (bgetline(), line[0] != '\0') {
     if (strncmp(line, "cleartomark", 11) == 0) {
       if (line[11] && line[11] != '\n')
 	output(line + 11);
-      while (bgetline(), line[0] != '\0') {
-	fprintf(stderr, "!xx");
+      while (bgetline(), line[0] != '\0')
 	output(line);
-      }
       break;
     }
   }
@@ -718,7 +717,10 @@ particular purpose.\n");
   fclose(ofp);
   
   if (unknown)
-    error("%d unknown charstring operations encountered.", unknown);
+    error((unknown > 1
+	   ? "encountered %d unknown charstring commands"
+	   : "encountered %d unknown charstring command"),
+	  unknown);
   
   return 0;
 }

@@ -11,7 +11,8 @@
  *
  * I. Lee Hetherington (ilh@lcs.mit.edu)
  *
- * The 1.5 versions are maintained by eddietwo@lcs.mit.edu.
+ * 1.5 and later versions contain changes by, and are maintained by,
+ * Eddie Kohler <eddietwo@lcs.mit.edu>.
  *
  * Old change log:
  *
@@ -57,7 +58,7 @@ void fatal_error(char *message, ...);
 
 static int read_one(FILE *fi)
 {
-  return fgetc(fi);
+  return getc(fi);
 }
 
 static int read_two(FILE *fi)
@@ -98,13 +99,13 @@ static int32 read_four(FILE *fi)
 
 static void write_pfb_length(FILE *fo, int32 len)
 {
-  fputc((int)(len & 0xff), fo);
+  putc((int)(len & 0xff), fo);
   len >>= 8;
-  fputc((int)(len & 0xff), fo);
+  putc((int)(len & 0xff), fo);
   len >>= 8;
-  fputc((int)(len & 0xff), fo);
+  putc((int)(len & 0xff), fo);
   len >>= 8;
-  fputc((int)(len & 0xff), fo);
+  putc((int)(len & 0xff), fo);
 }
 
 static void reposition(FILE *fi, int32 absolute)
@@ -123,11 +124,11 @@ static void output_hex_byte(FILE *fo, int b)
   static char *hex = "0123456789ABCDEF";
 
   if (hex_column > 62) {                          /* 64 column output */
-    fputc('\n', fo);
+    putc('\n', fo);
     hex_column = 0;
   }
-  fputc(hex[b >> 4], fo);
-  fputc(hex[b & 0xf], fo);
+  putc(hex[b >> 4], fo);
+  putc(hex[b & 0xf], fo);
   hex_column += 2;
 }
 
@@ -149,21 +150,21 @@ static void extract_data(FILE *fi, FILE *fo, int32 offset, int binary)
   case PS_ascii:
     (void) read_one(fi);
     if (binary) {
-      fputc(128, fo);
-      fputc(1, fo);
+      putc(128, fo);
+      putc(1, fo);
       write_pfb_length(fo, len);
       while (len--) {
 	if ((c = read_one(fi)) == '\r')           /* change \r to \n */
 	  c = '\n';
-	fputc(c, fo);
+	putc(c, fo);
       }
     } else {
       if (last_type == PS_binary)
-	fputc('\n', fo);
+	putc('\n', fo);
       while (len--) {
 	if ((c = read_one(fi)) == '\r')           /* change \r to \n */
 	  c = '\n';
-	fputc(c, fo);
+	putc(c, fo);
       }
     }
     last_type = 1;
@@ -171,11 +172,11 @@ static void extract_data(FILE *fi, FILE *fo, int32 offset, int binary)
   case PS_binary:
     (void) read_one(fi);
     if (binary) {
-      fputc(128, fo);
-      fputc(2, fo);
+      putc(128, fo);
+      putc(2, fo);
       write_pfb_length(fo, len);
       while (len--)
-	fputc(read_one(fi), fo);
+	putc(read_one(fi), fo);
     } else {
       if (last_type != 2)
 	hex_column = 0;
@@ -187,8 +188,8 @@ static void extract_data(FILE *fi, FILE *fo, int32 offset, int binary)
   case PS_end:
     (void) read_one(fi);
     if (binary) {
-      fputc(128, fo);
-      fputc(3, fo);
+      putc(128, fo);
+      putc(3, fo);
     }
     break;
   }
@@ -227,7 +228,7 @@ fatal_error(char *message, ...)
   va_start(val, message);
   fprintf(stderr, "%s: ", program_name);
   vfprintf(stderr, message, val);
-  fputc('\n', stderr);
+  putc('\n', stderr);
   exit(1);
 }
 
@@ -239,7 +240,7 @@ error(char *message, ...)
   va_start(val, message);
   fprintf(stderr, "%s: ", program_name);
   vfprintf(stderr, message, val);
-  fputc('\n', stderr);
+  putc('\n', stderr);
 }
 
 

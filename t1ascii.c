@@ -11,7 +11,8 @@
  *
  * I. Lee Hetherington (ilh@lcs.mit.edu)
  *
- * The 1.5 versions are maintained by eddietwo@lcs.mit.edu.
+ * 1.5 and later versions contain changes by, and are maintained by,
+ * Eddie Kohler <eddietwo@lcs.mit.edu>.
  *
  * Old change log:
  *
@@ -65,10 +66,10 @@ static int32 read_length()
 {
   int32 length;
 
-  length = (int32)(fgetc(ifp) & 0xff);
-  length |= (int32)(fgetc(ifp) & 0xff) << 8;
-  length |= (int32)(fgetc(ifp) & 0xff) << 16;
-  length |= (int32)(fgetc(ifp) & 0xff) << 24;
+  length = (int32)(getc(ifp) & 0xff);
+  length |= (int32)(getc(ifp) & 0xff) << 8;
+  length |= (int32)(getc(ifp) & 0xff) << 16;
+  length |= (int32)(getc(ifp) & 0xff) << 24;
 
   return length;
 }
@@ -83,11 +84,11 @@ static void output_hex(int b)
 
   /* trim hexadecimal lines to 64 columns */
   if (hexcol >= 64) {
-    fputc('\n', ofp);
+    putc('\n', ofp);
     hexcol = 0;
   }
-  fputc(hexchar[(b >> 4) & 0xf], ofp);
-  fputc(hexchar[b & 0xf], ofp);
+  putc(hexchar[(b >> 4) & 0xf], ofp);
+  putc(hexchar[b & 0xf], ofp);
   hexcol += 2;
 }
 
@@ -115,7 +116,7 @@ fatal_error(char *message, ...)
   va_start(val, message);
   fprintf(stderr, "%s: ", program_name);
   vfprintf(stderr, message, val);
-  fputc('\n', stderr);
+  putc('\n', stderr);
   exit(1);
 }
 
@@ -127,7 +128,7 @@ error(char *message, ...)
   va_start(val, message);
   fprintf(stderr, "%s: ", program_name);
   vfprintf(stderr, message, val);
-  fputc('\n', stderr);
+  putc('\n', stderr);
 }
 
 
@@ -236,7 +237,7 @@ particular purpose.\n");
   /* main loop through blocks */
   
   for (;;) {
-    c = fgetc(ifp);
+    c = getc(ifp);
     if (c == EOF) {
       break;
     }
@@ -246,21 +247,21 @@ particular purpose.\n");
       else
 	fatal_error("corrupt PFB: marker missing before block %d", block);
     }
-    switch (c = fgetc(ifp)) {
+    switch (c = getc(ifp)) {
     case ASCII:
       if (last_type != ASCII)
-	fputc('\n', ofp);
+	putc('\n', ofp);
       last_type = ASCII;
       for (length = read_length(); length > 0; length--)
-	if ((c = fgetc(ifp)) == '\r')
-	  fputc('\n', ofp);
+	if ((c = getc(ifp)) == '\r')
+	  putc('\n', ofp);
 	else
-	  fputc(c, ofp);
+	  putc(c, ofp);
       break;
     case BINARY:
       last_type = BINARY;
       for (length = read_length(); length > 0; length--)
-	output_hex(fgetc(ifp));
+	output_hex(getc(ifp));
       break;
     case DONE:
       /* nothing to be done --- will exit at top of loop with EOF */
