@@ -321,6 +321,7 @@ check_macbinary(FILE *ifp)
   if (read_one(ifp) != 0)
     return "bad version byte";
   
+#if 0
   /* write out bullshit */
   if (0) {int t;
     reposition(ifp, 65);
@@ -369,6 +370,7 @@ check_macbinary(FILE *ifp)
     t = read_one(ifp);
     fprintf(stderr, "version %d\n", t);
   }
+#endif
 
   /* check file length */
   reposition(ifp, 1);
@@ -500,16 +502,12 @@ check_binhex_crc(FILE *f, int offset, int length)
   int crc = 0;
   char buf[2048];
   reposition(f, offset);
-  //length -= 2;
   while (length > 0) {
     int n = (length < 2048 ? length : 2048);
     fread(buf, 1, n, f);
     crc = hqx_crcbuf(crc, n, buf);
     length -= n;
   }
-  /*{ int r = read_two(f); crc = hqx_crcbuf(crc, 2, "\0\0");
-  fprintf(stderr, "%d %d\n", r, crc);
-  return crc == r;}*/
   return crc == 0;
 }
 

@@ -24,8 +24,7 @@ is not specified output goes to the standard output.
 Output in PFA (ASCII) format.
 .TP 5
 .BR \-\-pfb ", " \-b
-Output in PFB (binary) format. This is the default. The block lengths are
-the same as the POST resource block lengths.
+Output in PFB (binary) format. This is the default.
 .TP 5
 .BR \-\-raw ", " \-r
 Indicates that the input is a raw resource fork.
@@ -41,6 +40,17 @@ Indicates that the input is in AppleDouble format.
 .TP 5
 .BR \-\-binhex
 Indicates that the input is in BinHex 4.0 format.
+.TP
+.BI \-\-block\-length= "num\fR, " \-l " num"
+PFB only: Set the maximum output block length to
+.I num.
+The default length is as large as memory allows.
+.TP
+.BI \-\-line\-length= "num\fR, " \-l " num"
+PFA only: Set the maximum length of encrypted lines in the output to
+.I num.
+(These are the lines consisting wholly of hexadecimal digits.) The default
+is 64.
 .SH "SEE ALSO"
 .LP
 .BR t1mac (1),

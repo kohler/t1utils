@@ -425,6 +425,7 @@ output_macbinary(FILE *rf, int32 rf_len, const char *filename, FILE *f)
 /* write an AppleSingle file */
 
 #define APPLESINGLE_MAGIC 0x00051600
+#define APPLEDOUBLE_MAGIC 0x00051607
 #define APPLESINGLE_VERSION 0x00020000
 #define APPLESINGLE_TIME_DELTA 883612800
 #define APPLESINGLE_HEADERLEN 26
@@ -438,15 +439,19 @@ output_macbinary(FILE *rf, int32 rf_len, const char *filename, FILE *f)
 #define APPLESINGLE_REALNAME_ENTRY 3
 
 static void
-output_applesingle(FILE *rf, int32 rf_len, const char *filename, FILE *f)
+output_applesingle(FILE *rf, int32 rf_len, const char *filename, FILE *f,
+		   int appledouble)
 {
   uint32 offset;
   int i, len = strlen(filename);
-  write_four(APPLESINGLE_MAGIC, f); /* magic number */
+  if (appledouble)		/* magic number */
+    write_four(APPLEDOUBLE_MAGIC, f);
+  else
+    write_four(APPLESINGLE_MAGIC, f);
   write_four(APPLESINGLE_VERSION, f); /* version number */
   for (i = 0; i < 4; i++)
     write_four(0, f);		/* filler */
-  write_two(5, f);		/* number of entries */
+  write_two(appledouble ? 4 : 5, f); /* number of entries */
 
   /* real name entry */
   offset = APPLESINGLE_HEADERLEN + 3 * APPLESINGLE_ENTRYLEN;
@@ -474,9 +479,11 @@ output_applesingle(FILE *rf, int32 rf_len, const char *filename, FILE *f)
   offset += rf_len;
 
   /* data fork entry */
-  write_four(APPLESINGLE_DFORK_ENTRY, f);
-  write_four(offset, f);
-  write_four(0, f);
+  if (!appledouble) {
+    write_four(APPLESINGLE_DFORK_ENTRY, f);
+    write_four(offset, f);
+    write_four(0, f);
+  }
 
   /* real name data */
   fwrite(filename, 1, len, f);
@@ -619,9 +626,11 @@ output_binhex(FILE *rf, int32 rf_len, const char *filename, FILE *f)
 #define MACBINARY_OPT	304
 #define RAW_OPT		305
 #define APPLESINGLE_OPT	306
-#define BINHEX_OPT	307
+#define APPLEDOUBLE_OPT	307
+#define BINHEX_OPT	308
 
 static Clp_Option options[] = {
+  { "appledouble", 0, APPLEDOUBLE_OPT, 0, 0 },
   { "applesingle", 0, APPLESINGLE_OPT, 0, 0 },
   { "binhex", 0, BINHEX_OPT, 0, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
@@ -669,9 +678,10 @@ usage(void)
 {
   printf("\
 `T1mac' translates a PostScript Type 1 font from PFA or PFB format into\n\
-Macintosh format. The result can be written in MacBinary II format (the\n\
-default), AppleSingle format, BinHex format, or as a raw resource fork. It is\n\
-sent to the standard output unless an OUTPUT file is given.\n\
+Macintosh Type 1 format. The result can be written in MacBinary II format (the\n\
+default), AppleSingle format, AppleDouble format, or BinHex format, or as a\n\
+raw resource fork. It is sent to the standard output unless an OUTPUT file is\n\
+given.\n\
 \n\
 Usage: %s [OPTION]... [INPUT [OUTPUT]]\n\
 \n\
@@ -699,7 +709,7 @@ main(int argc, char **argv)
   const char *set_font_name = 0;
   struct font_reader fr;
   uint32 rfork_len;
-  int raw = 0, macbinary = 1, applesingle = 0, binhex = 0;
+  int raw = 0, macbinary = 1, applesingle = 0, appledouble = 0, binhex = 0;
   
   Clp_Parser *clp =
     Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
@@ -712,22 +722,27 @@ main(int argc, char **argv)
 
      case RAW_OPT:
       raw = 1;
-      macbinary = applesingle = binhex = 0;
+      macbinary = applesingle = appledouble = binhex = 0;
       break;
       
      case MACBINARY_OPT:
       macbinary = 1;
-      raw = applesingle = binhex = 0;
+      raw = applesingle = appledouble = binhex = 0;
       break;
       
      case APPLESINGLE_OPT:
       applesingle = 1;
-      raw = macbinary = binhex = 0;
+      raw = macbinary = appledouble = binhex = 0;
+      break;
+      
+     case APPLEDOUBLE_OPT:
+      appledouble = 1;
+      raw = macbinary = applesingle = binhex = 0;
       break;
       
      case BINHEX_OPT:
       binhex = 1;
-      raw = macbinary = applesingle = 0;
+      raw = macbinary = applesingle = appledouble = 0;
       break;
       
      output_file:
@@ -859,8 +874,8 @@ particular purpose.\n");
     output_macbinary(rfork_f, rfork_len, set_font_name, ofp);
   else if (raw)
     output_raw(rfork_f, rfork_len, ofp);
-  else if (applesingle)
-    output_applesingle(rfork_f, rfork_len, set_font_name, ofp);
+  else if (applesingle || appledouble)
+    output_applesingle(rfork_f, rfork_len, set_font_name, ofp, appledouble);
   else if (binhex)
     output_binhex(rfork_f, rfork_len, set_font_name, ofp);
   else

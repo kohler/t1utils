@@ -46,8 +46,10 @@ rm -rf $RPM_BUILD_ROOT
 %attr(0755,root,root) /usr/bin/t1asm
 %attr(0755,root,root) /usr/bin/t1disasm
 %attr(0755,root,root) /usr/bin/t1unmac
+%attr(0755,root,root) /usr/bin/t1mac
 %attr(0644,root,root) /usr/man/man1/t1ascii.1
 %attr(0644,root,root) /usr/man/man1/t1binary.1
 %attr(0644,root,root) /usr/man/man1/t1asm.1
 %attr(0644,root,root) /usr/man/man1/t1disasm.1
 %attr(0644,root,root) /usr/man/man1/t1unmac.1
+%attr(0644,root,root) /usr/man/man1/t1mac.1

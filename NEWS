@@ -1,6 +1,6 @@
 T1utils NEWS
 
-Version 1.17   26.Apr.2000
+Version 1.17   27.Apr.2000
 
 * Added new program, `t1mac', which translates PFA or PFB fonts into
   Macintosh-style fonts. T1mac can output in MacBinary, AppleSingle, or
