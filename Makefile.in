@@ -27,6 +27,7 @@ CFLAGS		= @CFLAGS@
 CPPFLAGS	= @DEFS@ -DVERSION=\"$(VERSION)\"
 PROFILING	= 
 LDFLAGS		= @LDFLAGS@
+LIBS		= @LIBS@
 
 INSTALL		= @INSTALL@
 INSTALL_PROGRAM	= @INSTALL_PROGRAM@
@@ -39,33 +40,39 @@ INSTALLERS	= install-t1ascii install-t1binary install-t1disasm \
 all: $(PROGRAMS)
 
 t1ascii: t1ascii.o clp.o
-	$(CCLINKER) $(CFLAGS) -o t1ascii t1ascii.o clp.o
+	$(CCLINKER) $(CFLAGS) -o t1ascii t1ascii.o clp.o $(LDFLAGS) $(LIBS)
 t1binary: t1binary.o clp.o
-	$(CCLINKER) $(CFLAGS) -o t1binary t1binary.o clp.o
+	$(CCLINKER) $(CFLAGS) -o t1binary t1binary.o clp.o $(LDFLAGS) $(LIBS)
 t1disasm: t1disasm.o clp.o
-	$(CCLINKER) $(CFLAGS) -o t1disasm t1disasm.o clp.o
+	$(CCLINKER) $(CFLAGS) -o t1disasm t1disasm.o clp.o $(LDFLAGS) $(LIBS)
 t1asm: t1asm.o clp.o
-	$(CCLINKER) $(CFLAGS) -o t1asm t1asm.o clp.o
+	$(CCLINKER) $(CFLAGS) -o t1asm t1asm.o clp.o $(LDFLAGS) $(LIBS)
 t1unmac: t1unmac.o clp.o
-	$(CCLINKER) $(CFLAGS) -o t1unmac t1unmac.o clp.o
+	$(CCLINKER) $(CFLAGS) -o t1unmac t1unmac.o clp.o $(LDFLAGS) $(LIBS)
 
 install: $(INSTALLERS)
 
 install-t1ascii: t1ascii t1ascii.man
 	$(INSTALL_PROGRAM) t1ascii $(bindir)/t1ascii
-	-$(INSTALL_DATA) t1ascii.man $(mandir)/t1ascii.$(manext)
+	-$(INSTALL_DATA) $(srcdir)/t1ascii.man $(mandir)/t1ascii.$(manext)
 install-t1binary: t1binary t1binary.man
 	$(INSTALL_PROGRAM) t1binary $(bindir)/t1binary
-	-$(INSTALL_DATA) t1binary.man $(mandir)/t1binary.$(manext)
+	-$(INSTALL_DATA) $(srcdir)/t1binary.man $(mandir)/t1binary.$(manext)
 install-t1disasm: t1disasm t1disasm.man
 	$(INSTALL_PROGRAM) t1disasm $(bindir)/t1disasm
-	-$(INSTALL_DATA) t1disasm.man $(mandir)/t1disasm.$(manext)
+	-$(INSTALL_DATA) $(srcdir)/t1disasm.man $(mandir)/t1disasm.$(manext)
 install-t1asm: t1asm t1asm.man
 	$(INSTALL_PROGRAM) t1asm $(bindir)/t1asm
-	-$(INSTALL_DATA) t1asm.man $(mandir)/t1asm.$(manext)
+	-$(INSTALL_DATA) $(srcdir)/t1asm.man $(mandir)/t1asm.$(manext)
 install-t1unmac: t1unmac t1unmac.man
 	$(INSTALL_PROGRAM) t1unmac $(bindir)/t1unmac
-	-$(INSTALL_DATA) t1unmac.man $(mandir)/t1unmac.$(manext)
+	-$(INSTALL_DATA) $(srcdir)/t1unmac.man $(mandir)/t1unmac.$(manext)
+
+uninstall:
+	for i in $(PROGRAMS) ; do \
+	rm -f $(bindir)/$$i ; \
+	rm -f $(mandir)/$$i.$(manext) ; \
+	done
 
 versionize:
 	perl -pi~ -e "s/^\\.ds V.*/.ds V $(VERSION)/;" t1ascii.man t1binary.man t1disasm.man t1asm.man t1unmac.man
@@ -106,5 +113,5 @@ rpm: $(PACKAGE)-$(VERSION).tar.gz
 	rm -rf /tmp/rpmb
 
 .PHONY: all install install-t1ascii install-t1binary install-t1asm \
-	install-t1disasm install-t1unmac srclinks \
+	install-t1disasm install-t1unmac uninstall srclinks \
 	versionize dist rpm clean mostlyclean distclean realclean
