@@ -14,8 +14,11 @@
  * The 1.5 versions are maintained by eddietwo@lcs.mit.edu.
  *
  * $Log: t1ascii.c,v $
- * Revision 1.1  1998/03/05 16:28:45  eddietwo
- * Initial revision
+ * Revision 1.2  1998/03/27 19:27:47  eddietwo
+ * change --output FIEL to --output=FILE
+ *
+ * Revision 1.1.1.1  1998/03/05 16:28:45  eddietwo
+ * initial version
  *
  * Revision 1.5  eddietwo (skip for consistency in t1utils package)
  * These changes by Eddie Kohler (eddietwo@lcs.mit.edu) not sanctioned
@@ -39,7 +42,7 @@
 
 #ifndef lint
 static char rcsid[] =
-  "@(#) $Id: t1ascii.c,v 1.1 1998/03/05 16:28:45 eddietwo Exp $";
+  "@(#) $Id: t1ascii.c,v 1.2 1998/03/27 19:27:47 eddietwo Exp $";
 static char copyright[] =
   "@(#) Copyright (c) 1992 by I. Lee Hetherington, all rights reserved.";
 #ifdef _MSDOS
@@ -163,7 +166,7 @@ usage(void)
 {
   fprintf(stderr, "Usage: %s [options] [input [output]]\n\
 Options:\n\
-  --output FILE, -o FILE        Write output to FILE.\n\
+  --output=FILE, -o FILE        Write output to FILE.\n\
   --help, -h                    Print this message and exit.\n\
   --version                     Print version number and warranty and exit.\n\
 ",
