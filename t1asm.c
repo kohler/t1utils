@@ -750,8 +750,8 @@ particular purpose.\n");
      
      Bugs: Occurrence of `/Subrs 9' in a comment will fool t1asm.
      
-     Thanks to XXX who reported that some fonts come without /Subrs sections,
-     and suggested looking for /CharStrings as well. */
+     Thanks to Tom Kacvinsky <tjk@ams.org> who reported that some fonts come
+     without /Subrs sections and provided a patch. */
   
   while (!feof(ifp) && !ferror(ifp)) {
     

@@ -5,7 +5,7 @@ Version 1.7   27.Nov.1998
 * t1asm: Should now work with fonts that have no /Subrs sections. Previously,
   assembling such a font would silently fail; all the character definitions
   would be mistaken for procedures and t1asm wouldn't translate them. Problem
-  noticed and fix suggested by XXX.
+  noticed and fix suggested by Tom Kacvinsky <tjk@ams.org>.
 
 * t1disasm: Removed spurious debugging output and improved warning message
   about unknown charstring commands.
