@@ -62,6 +62,7 @@
 #include <stdarg.h>
 #include <errno.h>
 #include "clp.h"
+#include "t1lib.h"
 
 /* int32 must be at least 32-bit and uint16 must be at least 16-bit */
 #if INT_MAX >= 0x7FFFFFFFUL
@@ -77,18 +78,12 @@ typedef unsigned int uint16;
 
 #define LINESIZE 512
 
-#define MAXBLOCKLEN ((1L<<17)-6)
-#define MINBLOCKLEN ((1L<<8)-6)
-
-#define MARKER   128
-#define ASCII    1
-#define BINARY   2
-#define DONE     3
-
 typedef unsigned char byte;
 
 static FILE *ifp;
 static FILE *ofp;
+static struct pfb_writer w;
+static int blocklen;
 
 /* flags */
 static int pfb = 1;
@@ -108,12 +103,6 @@ static char cs_start[10];
 /* for charstring buffering */
 static byte charstring_buf[65535];
 static byte *charstring_bp;
-
-/* for PFB block buffering */
-static byte blockbuf[MAXBLOCKLEN];
-static int32 blocklen = -1;
-static int32 blockpos = -1;
-static int blocktyp = ASCII;
 
 /* decryption stuff */
 static uint16 er, cr;
@@ -188,9 +177,6 @@ static struct command {
   { "vvcurveto", 26, -1 },	/* Type 2 */
 };                                                /* alphabetical */
 
-void fatal_error(char *message, ...);
-void error(char *message, ...);
-
 /* Two separate encryption functions because eexec and charstring encryption
    must proceed in parallel. */
 
@@ -216,26 +202,6 @@ static byte cencrypt(byte plain)
   return cipher;
 }
 
-/* This function flushes a buffered PFB block. */
-
-static void output_block()
-{
-  int32 i;
-
-  /* output four-byte block length */
-  putc((int)(blockpos & 0xff), ofp);
-  putc((int)((blockpos >> 8) & 0xff), ofp);
-  putc((int)((blockpos >> 16) & 0xff), ofp);
-  putc((int)((blockpos >> 24) & 0xff), ofp);
-  
-  /* output block data */
-  for (i = 0; i < blockpos; i++)
-    putc(blockbuf[i], ofp);
-  
-  /* mark block buffer empty and uninitialized */
-  blockpos =  -1;
-}
-
 /* This function outputs a single byte.  If output is in PFB format then output
    is buffered through blockbuf[].  If output is in PFA format, then output
    will be hexadecimal if in_eexec is set, ASCII otherwise. */
@@ -247,14 +213,7 @@ static void output_byte(byte b)
   
   if (pfb) {
     /* PFB */
-    if (blockpos < 0) {
-      putc(MARKER, ofp);
-      putc(blocktyp, ofp);
-      blockpos = 0;
-    }
-    blockbuf[blockpos++] = b;
-    if (blockpos == blocklen)
-      output_block();
+    PFB_OUTPUT_BYTE(&w, b);
   } else {
     /* PFA */
     if (in_eexec) {
@@ -298,9 +257,9 @@ static void eexec_string(char *string)
 static void eexec_start()
 {
   eexec_string(line);
-  if (pfb) {
-    output_block();
-    blocktyp = BINARY;
+  if (pfb && w.blocktyp != PFB_BINARY) {
+    pfb_writer_output_block(&w);
+    w.blocktyp = PFB_BINARY;
   }
   
   in_eexec = 1;
@@ -377,11 +336,11 @@ static void eexec_end(void)
 {
   int i, j;
   
-  if (pfb) {
-    output_block();
-    blocktyp = ASCII;
-  } else {
+  if (!pfb)
     putc('\n', ofp);
+  else if (w.blocktyp != PFB_ASCII) {
+    pfb_writer_output_block(&w);
+    w.blocktyp = PFB_ASCII;
   }
   
   in_eexec = active = 0;
@@ -602,7 +561,7 @@ static Clp_Option options[] = {
 static char *program_name;
 
 void
-fatal_error(char *message, ...)
+fatal_error(const char *message, ...)
 {
   va_list val;
   va_start(val, message);
@@ -613,7 +572,7 @@ fatal_error(char *message, ...)
 }
 
 void
-error(char *message, ...)
+error(const char *message, ...)
 {
   va_list val;
   va_start(val, message);
@@ -644,8 +603,8 @@ Options:\n\
   -a, --pfa                   Output font in ASCII (PFA) format.\n\
   -b, --pfb                   Output font in binary (PFB) format. This is\n\
                               the default.\n\
-  -l, --block-length=NUM      Set output max block length (PFB only).\n\
-  -l, --line-length=NUM       Set output max encrypted line length (PFA only).\n\
+  -l, --block-length NUM      Set max block length for PFB output.\n\
+  -l, --line-length NUM       Set max encrypted line length for PFA output.\n\
   -o, --output=FILE           Write output to FILE.\n\
   -h, --help                  Print this message and exit.\n\
       --version               Print version number and warranty and exit.\n\
@@ -698,7 +657,7 @@ int main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("t1asm (LCDF t1utils) %s\n", VERSION);
-      printf("Copyright (C) 1992-9 I. Lee Hetherington, Eddie Kohler et al.\n\
+      printf("Copyright (C) 1992-2000 I. Lee Hetherington, Eddie Kohler et al.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -730,17 +689,7 @@ particular purpose.\n");
   }
   
  done:
-  if (pfb) {
-    if (blocklen == -1)
-      blocklen = MAXBLOCKLEN;
-    else if (blocklen < MINBLOCKLEN) {
-      blocklen = MINBLOCKLEN;
-      error("warning: block length raised to %d", blocklen);
-    } else if (blocklen > MAXBLOCKLEN) {
-      blocklen = MAXBLOCKLEN;
-      error("warning: block length lowered to %d", blocklen);
-    }
-  } else {
+  if (!pfb) {
     if (blocklen == -1)
       blocklen = 64;
     else if (blocklen < 4) {
@@ -754,6 +703,9 @@ particular purpose.\n");
   
   if (!ifp) ifp = stdin;
   if (!ofp) ofp = stdout;
+
+  if (pfb)
+    init_pfb_writer(&w, blocklen, ofp);
   
 #if defined(_MSDOS) || defined(_WIN32)
   /* If we are processing a PFB (binary) output */
@@ -841,11 +793,8 @@ particular purpose.\n");
     eexec_string(line);
   }
   
-  if (pfb) {
-    output_block();
-    putc(MARKER, ofp);
-    putc(DONE, ofp);
-  }
+  if (pfb)
+    pfb_writer_end(&w);
 
   /* the end! */
   if (!ever_active)

@@ -1,0 +1,39 @@
+.TH T1UNMAC 1  "5 Mar 1998"
+.SH NAME
+t1mac \- translate a PFA or PFB PostScript font into Macintosh format
+.SH SYNOPSIS
+.B t1mac
+\%[\fB\-\-macbinary\fR|\fB\-\-applesingle\fR|\fB\-\-binhex\fR|\fB\-\-raw\fR]
+\%[\fIinput\fR [\fIoutput\fR]]
+.SH DESCRIPTION
+.B t1mac
+reads a PFA (hexadecimal) or PFB (binary) font file and generates an
+equivalent Macintosh PostScript font file. The output file can be in
+MacBinary II, AppleSingle, or BinHex format, or it can be a raw resource
+fork. The default is MacBinary II; use an option to choose a different
+format. If the
+.I output
+file is not specified output goes to the standard output.
+.SH OPTIONS
+.TP 5
+.BR \-\-raw ", " \-r
+Indicates that output should be a raw resource fork.
+.TP 5
+.BR \-\-macbinary
+Indicates that output should be in MacBinary I or II format. This is the
+default.
+.TP 5
+.BR \-\-applesingle
+Indicates that output should be in AppleSingle format.
+.TP 5
+.BR \-\-binhex
+Indicates that output should be in BinHex 4.0 format.
+.SH "SEE ALSO"
+.LP
+.BR t1unmac (1),
+.BR t1ascii (1),
+.BR t1binary (1),
+.BR t1asm (1),
+.BR t1disasm (1)
+.SH AUTHORS
+Eddie Kohler (eddietwo@lcs.mit.edu)

@@ -3,15 +3,8 @@
 t1binary \- convert type-1 font from ASCII to binary
 .SH SYNOPSIS
 .B t1binary
-[
-.BI \-l " length"
-]
-[
-.I input
-[
-.I output
-]
-]
+\%[\fB\-l\fR \fIlength\fR]
+\%[\fIinput\fR [\fIoutput\fR]]
 .SH DESCRIPTION
 .B t1binary
 converts Adobe Type 1 font programs in PFA (hexadecimal) format to PFB
@@ -31,6 +24,7 @@ The default is to output sections as large as possible.
 .LP
 .BR t1ascii (1),
 .BR t1unmac (1),
+.BR t1mac (1),
 .BR t1disasm (1),
 .BR t1asm (1)
 .LP

@@ -3,26 +3,19 @@
 t1unmac \- translate a Mac PostScript font into PFA or PFB format
 .SH SYNOPSIS
 .B t1unmac
-[
-.B \-a
-]
-[
-.B \-b
-]
-[
-.B \-r
-]
-.I input
-[
-.I output
-]
+\%[\fB\-a\fR|\fB\-b\fR]
+\%[\fB\-r\fR]
+\%[\fIinput\fR [\fIoutput\fR]]
 .SH DESCRIPTION
 .B t1unmac
 extracts POST resources from a Macintosh PostScript font file and creates a
 PFA (hexadecimal) or PFB (binary) font file. The file
 .I input
-should be seekable and be in MacBinary (I or II) format or be a raw
-resource fork. If the file
+should be in MacBinary I or II, AppleSingle, AppleDouble, or BinHex format,
+or it can be a raw resource fork. If the file is a raw resource fork, you
+need to give the `\-\-raw' option; otherwise
+.B t1unmac
+should automatically figure out what kind of file you have. If the file
 .I output
 is not specified output goes to the standard output.
 .SH OPTIONS
@@ -38,10 +31,19 @@ the same as the POST resource block lengths.
 Indicates that the input is a raw resource fork.
 .TP 5
 .BR \-\-macbinary
-Indicates that the input is in MacBinary I or II format. This is the
-default.
+Indicates that the input is in MacBinary I or II format.
+.TP 5
+.BR \-\-applesingle
+Indicates that the input is in AppleSingle format.
+.TP 5
+.BR \-\-appledouble
+Indicates that the input is in AppleDouble format.
+.TP 5
+.BR \-\-binhex
+Indicates that the input is in BinHex 4.0 format.
 .SH "SEE ALSO"
 .LP
+.BR t1mac (1),
 .BR t1ascii (1),
 .BR t1binary (1),
 .BR t1asm (1),

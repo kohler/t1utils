@@ -3,21 +3,9 @@
 t1asm \- assemble type-1 font
 .SH SYNOPSIS
 .B t1asm
-[
-.B -a
-]
-[
-.B -b
-]
-[
-.BI \-l " length"
-]
-[
-.I input
-[
-.I output
-]
-]
+\%[\fB\-a\fR|\fB\-b\fR]
+\%[\fB\-l\fR \fIlength\fR]
+\%[\fIinput\fR [\fIoutput\fR]]
 .SH DESCRIPTION
 .B t1asm
 assembles Adobe Type 1 font programs into either PFA (hexadecimal) or PFB
@@ -87,7 +75,8 @@ is 64.
 .BR t1disasm (1),
 .BR t1ascii (1),
 .BR t1binary (1),
-.BR t1unmac (1)
+.BR t1unmac (1),
+.BR t1mac (1)
 .LP
 .I "Adobe Type 1 Font Format"
 is available free from Adobe as a PDF file.

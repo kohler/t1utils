@@ -59,125 +59,43 @@ typedef long int32;
 typedef unsigned long uint32;
 #endif
 
-#define MAXBLOCKLEN (1L<<17)
-#define DEFAULT_BLOCKLEN (1L<<12)
-
 typedef unsigned char byte;
 
-static FILE *ofp;
-
 /* for PFB block buffering */
-static byte *blockbuf = 0;
-static uint32 blocklen = 0;
-static uint32 max_blocklen = 0xFFFFFFFFUL;
-static uint32 blockpos = 0;
-static int blocktyp = PFB_ASCII;
-
-static int binary_blocks_written = 0;
+static struct pfb_writer w;
 
 void fatal_error(const char *message, ...);
 void error(const char *message, ...);
 
-
-/* This function flushes a buffered PFB block. */
-
-static void pfb_output_block()
-{
-  /* do nothing if nothing in block */
-  if (blockpos == 0)
-    return;
-  
-  /* output four-byte block length */
-  putc(PFB_MARKER, ofp);
-  putc(blocktyp, ofp);
-  putc((int)(blockpos & 0xff), ofp);
-  putc((int)((blockpos >> 8) & 0xff), ofp);
-  putc((int)((blockpos >> 16) & 0xff), ofp);
-  putc((int)((blockpos >> 24) & 0xff), ofp);
-  
-  /* output block data */
-  fwrite(blockbuf, 1, blockpos, ofp);
-  
-  /* mark block buffer empty and uninitialized */
-  blockpos =  0;
-  if (blocktyp == PFB_BINARY)
-    binary_blocks_written++;
-}
-
-static void
-pfb_grow_block(void)
-{
-  if (!blockbuf) {
-    /* first time through: allocate blockbuf */
-    blocklen = DEFAULT_BLOCKLEN;
-    blockbuf = (byte *)malloc(blocklen);
-    if (!blockbuf)
-      fatal_error("out of memory");
-    
-  } else if (blocklen < max_blocklen) {
-    /* later: grow blockbuf */
-    int new_blocklen = blocklen * 2;
-    byte *new_blockbuf;
-    if (new_blocklen > max_blocklen)
-      new_blocklen = max_blocklen;
-    new_blockbuf = (byte *)malloc(new_blocklen);
-    if (!new_blockbuf) {
-      error("out of memory; muddling on with a smaller block size");
-      max_blocklen = blocklen;
-      pfb_output_block();
-    } else {
-      memcpy(new_blockbuf, blockbuf, blocklen);
-      free(blockbuf);
-      blockbuf = new_blockbuf;
-      blocklen = new_blocklen;
-    }
-    
-  } else
-    /* blockbuf already the right size, just output the block */
-    pfb_output_block();
-}
-
-/* This function outputs a single byte.  If output is in PFB format then output
-   is buffered through blockbuf[].  If output is in PFA format, then output
-   will be hexadecimal if in_eexec is set, ASCII otherwise. */
-
-static void pfb_output_byte(byte b)
-{
-  if (blockpos == blocklen)
-    pfb_grow_block();
-  blockbuf[blockpos++] = b;
-}
 
 /* PFB font_reader functions */
 
 static void
 pfb_output_ascii(char *s)
 {
-  if (blocktyp == PFB_BINARY) {
-    pfb_output_block();
-    blocktyp = PFB_ASCII;
+  if (w.blocktyp == PFB_BINARY) {
+    pfb_writer_output_block(&w);
+    w.blocktyp = PFB_ASCII;
   }
   for (; *s; s++)
-    pfb_output_byte((byte)*s);
+    PFB_OUTPUT_BYTE(&w, (byte)*s);
 }
 
 static void
 pfb_output_binary(unsigned char *s, int len)
 {
-  if (blocktyp == PFB_ASCII) {
-    pfb_output_block();
-    blocktyp = PFB_BINARY;
+  if (w.blocktyp == PFB_ASCII) {
+    pfb_writer_output_block(&w);
+    w.blocktyp = PFB_BINARY;
   }
   for (; len > 0; len--, s++)
-    pfb_output_byte(*s);
+    PFB_OUTPUT_BYTE(&w, *s);
 }
 
 static void
 pfb_output_end()
 {
-  pfb_output_block();
-  putc(PFB_MARKER, ofp);
-  putc(PFB_DONE, ofp);
+  pfb_writer_end(&w);
 }
 
 
@@ -251,12 +169,14 @@ Report bugs to <eddietwo@lcs.mit.edu>.\n", program_name);
 }
 
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
   int c;
-  FILE *ifp = 0;
+  FILE *ifp = 0, *ofp = 0;
   const char *ifp_filename = "<stdin>";
   struct font_reader fr;
+  int max_blocklen = -1;
   
   Clp_Parser *clp =
     Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
@@ -294,7 +214,7 @@ int main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("t1binary (LCDF t1utils) %s\n", VERSION);
-      printf("Copyright (C) 1992-9 I. Lee Hetherington, Eddie Kohler et al.\n\
+      printf("Copyright (C) 1992-2000 I. Lee Hetherington, Eddie Kohler et al.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -336,10 +256,11 @@ particular purpose.\n");
   _setmode(_fileno(ofp), _O_BINARY);
 #endif
   
-  /* prepare font reader */
+  /* prepare font reader and pfb writer */
   fr.output_ascii = pfb_output_ascii;
   fr.output_binary = pfb_output_binary;
   fr.output_end = pfb_output_end;
+  init_pfb_writer(&w, max_blocklen, ofp);
   
   /* peek at first byte to see if it is the PFB marker 0x80 */
   c = getc(ifp);
@@ -356,7 +277,7 @@ particular purpose.\n");
   fclose(ifp);
   fclose(ofp);
   
-  if (!binary_blocks_written)
+  if (!w.binary_blocks_written)
     fatal_error("no binary blocks written! Are you sure this was a font?");
   
   return 0;

@@ -47,18 +47,23 @@
 #include <stdarg.h>
 #include <string.h>
 #include <errno.h>
+#include <ctype.h>
 #include "clp.h"
+#include "t1lib.h"
 
 /* int32 must be at least 32-bit */
 #if INT_MAX >= 0x7FFFFFFFUL
 typedef int int32;
+typedef unsigned int uint32;
 #else
 typedef long int32;
+typedef unsigned long uint32;
 #endif
 
-static int line_length = 64;
+/* for PFB block buffering */
+void fatal_error(const char *message, ...);
+void error(const char *message, ...);
 
-void fatal_error(char *message, ...);
 
 /* Some functions to read one, two, three, and four byte integers in 68000
    byte order (most significant byte first). */
@@ -74,8 +79,8 @@ read_two(FILE *fi)
 {
   int val;
 
-  val = read_one(fi);
-  val = (val << 8) | read_one(fi);
+  val = getc(fi);
+  val = (val << 8) | getc(fi);
 
   return val;
 }
@@ -85,9 +90,9 @@ read_three(FILE *fi)
 {
   int32 val;
 
-  val = read_one(fi);
-  val = (val << 8) | read_one(fi);
-  val = (val << 8) | read_one(fi);
+  val = getc(fi);
+  val = (val << 8) | getc(fi);
+  val = (val << 8) | getc(fi);
 
   return val;
 }
@@ -97,28 +102,15 @@ read_four(FILE *fi)
 {
   int32 val;
 
-  val = read_one(fi);
-  val = (val << 8) | read_one(fi);
-  val = (val << 8) | read_one(fi);
-  val = (val << 8) | read_one(fi);
+  val = getc(fi);
+  val = (val << 8) | getc(fi);
+  val = (val << 8) | getc(fi);
+  val = (val << 8) | getc(fi);
 
   return val;
 }
 
-/* Function to write four byte length to PFB file: least significant byte
-   first. */
-
-static void
-write_pfb_length(FILE *fo, int32 len)
-{
-  putc((int)(len & 0xff), fo);
-  len >>= 8;
-  putc((int)(len & 0xff), fo);
-  len >>= 8;
-  putc((int)(len & 0xff), fo);
-  len >>= 8;
-  putc((int)(len & 0xff), fo);
-}
+/* reposition a file with error messages */
 
 static void
 reposition(FILE *fi, int32 absolute)
@@ -129,6 +121,8 @@ reposition(FILE *fi, int32 absolute)
 		absolute);
 }
 
+static int blocklen = -1;
+
 static int hex_column = 0;	/* current column of hex ASCII output */
 
 static void
@@ -136,7 +130,7 @@ output_hex_byte(FILE *fo, int b)
 {
   static char *hex = "0123456789abcdef";
   
-  if (hex_column >= line_length) {
+  if (hex_column >= blocklen) {
     putc('\n', fo);
     hex_column = 0;
   }
@@ -150,64 +144,76 @@ output_hex_byte(FILE *fo, int b)
    specifies resource type: 1 for ASCII, 2 for binary, and 5 for end.  The
    second byte is always zero. */
 
-static void
-extract_data(FILE *fi, FILE *fo, int32 offset, int binary)
+
+/* Function to write four byte length to PFB file: least significant byte
+   first. */
+
+static int
+extract_data(FILE *fi, FILE *fo, struct pfb_writer *w, int32 offset, int pfb)
 {
   enum PS_type { PS_ascii = 1, PS_binary = 2, PS_end = 5 };
-  static enum PS_type last_type = PS_ascii;
-  int32 len, save_offset = ftell(fi);
-  int c;
-  
+  static enum PS_type last_type = -1;
+  static int skip_newline = 0;
+  int32 len;
+  int more = 1;
+  int i, c;
+
   reposition(fi, offset);
-  len = read_four(fi) - 2;                        /* subtract type field */
+  len = read_four(fi) - 2;	/* subtract type field */
+
   switch ((enum PS_type)read_one(fi)) {
-  case PS_ascii:
-    (void) read_one(fi);
-    if (binary) {
-      putc(128, fo);
-      putc(1, fo);
-      write_pfb_length(fo, len);
-      while (len--) {
-	if ((c = read_one(fi)) == '\r')           /* change \r to \n */
-	  c = '\n';
-	putc(c, fo);
-      }
-    } else {
-      if (last_type == PS_binary)
-	putc('\n', fo);
-      while (len--) {
-	if ((c = read_one(fi)) == '\r')           /* change \r to \n */
-	  c = '\n';
-	putc(c, fo);
-      }
-    }
-    last_type = 1;
-    break;
-   case PS_binary:
-    (void) read_one(fi);
-    if (binary) {
-      putc(128, fo);
-      putc(2, fo);
-      write_pfb_length(fo, len);
-      while (len--)
-	putc(read_one(fi), fo);
-    } else {
-      if (last_type != 2)
-	hex_column = 0;
-      while (len--)
-	output_hex_byte(fo, read_one(fi));
-      last_type = 2;
-    }
-    break;
+    
+   case PS_ascii: {
+     (void) read_one(fi);
+     if (last_type != PFB_ASCII && pfb) {
+       pfb_writer_output_block(w);
+       w->blocktyp = PFB_ASCII;
+     }
+     for (i = 0; i < len; i++) {
+       c = read_one(fi);
+       if (c == '\n' && skip_newline) {
+	 skip_newline = 0;
+	 continue;
+       }
+       if (c == '\r') {
+	 c = '\n';
+	 skip_newline = 1;
+       } else
+	 skip_newline = 0;
+       if (pfb)
+	 PFB_OUTPUT_BYTE(w, c);
+       else
+	 putc(c, fo);
+     }
+     last_type = PFB_ASCII;
+     break;
+   }
+   
+   case PS_binary: {
+     (void) read_one(fi);
+     if (last_type != PFB_BINARY && pfb) {
+       pfb_writer_output_block(w);
+       w->blocktyp = PFB_BINARY;
+     } else if (last_type != PFB_BINARY)
+       hex_column = 0;
+     if (pfb) {
+       while (len--)
+	 PFB_OUTPUT_BYTE(w, read_one(fi));
+     } else {
+       while (len--)
+	 output_hex_byte(fo, read_one(fi));
+     }
+     last_type = PFB_BINARY;
+     break;
+   }
+
    case PS_end:
-    (void) read_one(fi);
-    if (binary) {
-      putc(128, fo);
-      putc(3, fo);
-    }
+    more = 0;
     break;
+    
   }
-  reposition(fi, save_offset);
+  
+  return more;
 }
 
 
@@ -223,8 +229,14 @@ extract_data(FILE *fi, FILE *fo, int32 offset, int binary)
 #define MACBINARY_OPT	306
 #define RAW_OPT		307
 #define LINE_LEN_OPT	308
+#define APPLEDOUBLE_OPT	309
+#define BINHEX_OPT	310
 
 static Clp_Option options[] = {
+  { "applesingle", 0, APPLEDOUBLE_OPT, 0, 0 },
+  { "appledouble", 0, APPLEDOUBLE_OPT, 0, 0 },
+  { "binhex", 0, BINHEX_OPT, 0, 0 },
+  { "block-length", 0, LINE_LEN_OPT, Clp_ArgUnsigned, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "line-length", 'l', LINE_LEN_OPT, Clp_ArgUnsigned, 0 },
   { "macbinary", 0, MACBINARY_OPT, 0, 0 },
@@ -237,7 +249,7 @@ static Clp_Option options[] = {
 static char *program_name;
 
 void
-fatal_error(char *message, ...)
+fatal_error(const char *message, ...)
 {
   va_list val;
   va_start(val, message);
@@ -248,7 +260,7 @@ fatal_error(char *message, ...)
 }
 
 void
-error(char *message, ...)
+error(const char *message, ...)
 {
   va_list val;
   va_start(val, message);
@@ -269,88 +281,29 @@ void
 usage(void)
 {
   printf("\
-`T1unmac' extracts a PostScript Type 1 font from a Macintosh resource fork\n\
-or MacBinary file. The result is written to the standard output unless an\n\
-OUTPUT file is given.\n\
+`T1unmac' extracts a PostScript Type 1 font from a Macintosh font file. It can\n\
+read MacBinary, AppleSingle, AppleDouble, or BinHex files, or raw Macintosh\n\
+resource forks. The result is written to the standard output unless an OUTPUT\n\
+file is given.\n\
 \n\
 Usage: %s [OPTION]... INPUT [OUTPUT]\n\
 \n\
 Options:\n\
-  -r, --raw                     Input font is raw Macintosh resource fork.\n\
-      --macbinary               Input font is a MacBinary file. This is the\n\
-                                default.\n\
-  -a, --pfa                     Output font in ASCII (PFA) format.\n\
-  -b, --pfb                     Output font in binary (PFB) format. This is\n\
-                                the default.\n\
-  -l, --line-length=N           Set line length for PFA output.\n\
-  -o, --output=FILE             Write output to FILE.\n\
-  -h, --help                    Print this message and exit.\n\
-      --version                 Print version number and warranty and exit.\n\
+  -r, --raw                   Input is a raw Macintosh resource fork.\n\
+      --macbinary             Input is in MacBinary format.\n\
+      --applesingle           Input is in AppleSingle format.\n\
+      --appledouble           Input is in AppleDouble format.\n\
+      --binhex                Input is in BinHex format.\n\
+  -a, --pfa                   Output font in ASCII (PFA) format.\n\
+  -b, --pfb                   Output font in binary (PFB) format. This is\n\
+                              the default.\n\
+  -l, --block-length NUM      Set max block length for PFB output.\n\
+  -l, --line-length NUM       Set max encrypted line length for PFA output.\n\
+  -o, --output FILE           Write output to FILE.\n\
+  -h, --help                  Print this message and exit.\n\
+      --version               Print version number and warranty and exit.\n\
 \n\
 Report bugs to <eddietwo@lcs.mit.edu>.\n", program_name);
-}
-
-
-/*
- * CRC computation logic
- * 
- * The logic for this method of calculating the CRC 16 bit polynomial is taken
- * from an article by David Schwaderer in the April 1985 issue of PC Tech
- * Journal.
- */
-
-static short      crctab[] =    /* CRC lookup table */
-{
- 0x0000, 0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241,
- 0xC601, 0x06C0, 0x0780, 0xC741, 0x0500, 0xC5C1, 0xC481, 0x0440,
- 0xCC01, 0x0CC0, 0x0D80, 0xCD41, 0x0F00, 0xCFC1, 0xCE81, 0x0E40,
- 0x0A00, 0xCAC1, 0xCB81, 0x0B40, 0xC901, 0x09C0, 0x0880, 0xC841,
- 0xD801, 0x18C0, 0x1980, 0xD941, 0x1B00, 0xDBC1, 0xDA81, 0x1A40,
- 0x1E00, 0xDEC1, 0xDF81, 0x1F40, 0xDD01, 0x1DC0, 0x1C80, 0xDC41,
- 0x1400, 0xD4C1, 0xD581, 0x1540, 0xD701, 0x17C0, 0x1680, 0xD641,
- 0xD201, 0x12C0, 0x1380, 0xD341, 0x1100, 0xD1C1, 0xD081, 0x1040,
- 0xF001, 0x30C0, 0x3180, 0xF141, 0x3300, 0xF3C1, 0xF281, 0x3240,
- 0x3600, 0xF6C1, 0xF781, 0x3740, 0xF501, 0x35C0, 0x3480, 0xF441,
- 0x3C00, 0xFCC1, 0xFD81, 0x3D40, 0xFF01, 0x3FC0, 0x3E80, 0xFE41,
- 0xFA01, 0x3AC0, 0x3B80, 0xFB41, 0x3900, 0xF9C1, 0xF881, 0x3840,
- 0x2800, 0xE8C1, 0xE981, 0x2940, 0xEB01, 0x2BC0, 0x2A80, 0xEA41,
- 0xEE01, 0x2EC0, 0x2F80, 0xEF41, 0x2D00, 0xEDC1, 0xEC81, 0x2C40,
- 0xE401, 0x24C0, 0x2580, 0xE541, 0x2700, 0xE7C1, 0xE681, 0x2640,
- 0x2200, 0xE2C1, 0xE381, 0x2340, 0xE101, 0x21C0, 0x2080, 0xE041,
- 0xA001, 0x60C0, 0x6180, 0xA141, 0x6300, 0xA3C1, 0xA281, 0x6240,
- 0x6600, 0xA6C1, 0xA781, 0x6740, 0xA501, 0x65C0, 0x6480, 0xA441,
- 0x6C00, 0xACC1, 0xAD81, 0x6D40, 0xAF01, 0x6FC0, 0x6E80, 0xAE41,
- 0xAA01, 0x6AC0, 0x6B80, 0xAB41, 0x6900, 0xA9C1, 0xA881, 0x6840,
- 0x7800, 0xB8C1, 0xB981, 0x7940, 0xBB01, 0x7BC0, 0x7A80, 0xBA41,
- 0xBE01, 0x7EC0, 0x7F80, 0xBF41, 0x7D00, 0xBDC1, 0xBC81, 0x7C40,
- 0xB401, 0x74C0, 0x7580, 0xB541, 0x7700, 0xB7C1, 0xB681, 0x7640,
- 0x7200, 0xB2C1, 0xB381, 0x7340, 0xB101, 0x71C0, 0x7080, 0xB041,
- 0x5000, 0x90C1, 0x9181, 0x5140, 0x9301, 0x53C0, 0x5280, 0x9241,
- 0x9601, 0x56C0, 0x5780, 0x9741, 0x5500, 0x95C1, 0x9481, 0x5440,
- 0x9C01, 0x5CC0, 0x5D80, 0x9D41, 0x5F00, 0x9FC1, 0x9E81, 0x5E40,
- 0x5A00, 0x9AC1, 0x9B81, 0x5B40, 0x9901, 0x59C0, 0x5880, 0x9841,
- 0x8801, 0x48C0, 0x4980, 0x8941, 0x4B00, 0x8BC1, 0x8A81, 0x4A40,
- 0x4E00, 0x8EC1, 0x8F81, 0x4F40, 0x8D01, 0x4DC0, 0x4C80, 0x8C41,
- 0x4400, 0x84C1, 0x8581, 0x4540, 0x8701, 0x47C0, 0x4680, 0x8641,
- 0x8201, 0x42C0, 0x4380, 0x8341, 0x4100, 0x81C1, 0x8081, 0x4040
-};
-
-/*
- * Update a CRC check on the given buffer.
- */
-
-int
-crcbuf(crc, len, buf)
-        register int    crc;    /* running CRC value */
-        register u_int  len;
-        register u_char *buf;
-{
-        register u_int  i;
-
-        for (i=0; i<len; i++)
-                crc = ((crc >> 8) & 0xff) ^ crctab[(crc ^ *buf++) & 0xff];
-        
-        return (crc);
 }
 
 
@@ -367,6 +320,55 @@ check_macbinary(FILE *ifp)
   reposition(ifp, 74);
   if (read_one(ifp) != 0)
     return "bad version byte";
+  
+  /* write out bullshit */
+  if (0) {int t;
+    reposition(ifp, 65);
+    t = read_four(ifp);
+    fprintf(stderr, "Type %c%c%c%c\n", (t>>24)&255, (t>>16)&255, (t>>8)&255, t&255);
+    t = read_four(ifp);
+    fprintf(stderr, "Creator %c%c%c%c\n", (t>>24)&255, (t>>16)&255, (t>>8)&255, t&255);
+    t = read_one(ifp);
+    fprintf(stderr, "Finder flags 1 %d\n", t);
+    read_one(ifp);
+    t = read_two(ifp);
+    fprintf(stderr, "horizpos %d\n", t);
+    t = read_two(ifp);
+    fprintf(stderr, "vertpos %d\n", t);
+    t = read_two(ifp);
+    fprintf(stderr, "folder id %d\n", t);
+    t = read_one(ifp);
+    fprintf(stderr, "protected? %d\n", t);
+    t = read_one(ifp);
+    t = read_four(ifp);
+    fprintf(stderr, "data len %d\n", t);
+    t = read_four(ifp);
+    fprintf(stderr, "rsrc len %d\n", t);
+    t = read_four(ifp);
+    {
+      struct tm *crap; 
+      fprintf(stderr, "creation date %x\n", t);
+      t -= 2082844800;
+      fprintf(stderr, "   %s\n", ctime(&t));
+      t = read_four(ifp);
+      fprintf(stderr, "modification date %x\n", t);
+      t -= 2082844800;
+      fprintf(stderr, "   %s\n", ctime(&t));
+      t = read_two(ifp);
+    }
+    fprintf(stderr, "getinfo len %d\n", t);
+    t = read_one(ifp);
+    fprintf(stderr, "finderflags 2 %d\n", t);
+    reposition(ifp, 116);
+    t = read_four(ifp);
+    fprintf(stderr, "total len %d\n", t);
+    t = read_two(ifp);
+    fprintf(stderr, "secondary header len %d\n", t);
+    t = read_one(ifp);
+    fprintf(stderr, "version %d\n", t);
+    t = read_one(ifp);
+    fprintf(stderr, "version %d\n", t);
+  }
 
   /* check file length */
   reposition(ifp, 1);
@@ -378,13 +380,6 @@ check_macbinary(FILE *ifp)
   j = read_four(ifp);
   if (i < 0 || j < 0 || i >= 0x800000 || j >= 0x800000)
     return "bad length";
-
-  /* check reserved area */
-  for (i = 101; i < 116; i++) {
-    reposition(ifp, i);
-    if (read_one(ifp) != 0)
-      return "bad reserved area";
-  }
 
   /* check CRC */
   reposition(ifp, 0);
@@ -413,16 +408,155 @@ check_appledouble(FILE *ifp)
   return 0;
 }
 
+const char *
+translate_binhex(FILE *f, FILE *tmpf)
+{
+  int i, c = 0, last_char, after_x90, bits, bitpos;
+  unsigned char value_table[256];
+
+  /* prepare value table */
+  {
+    const char *table = "!\"#$%&'()*+,-012345689@ABCDEFGHIJKLMNPQRSTUVXYZ[`abcdefhijklmpqr";
+    for (i = 0; i < 256; i++)
+      value_table[i] = 255;
+    for (i = 0; *table; i++, table++)
+      value_table[(unsigned char)*table] = i;
+  }
+  
+  /* skip to comment */
+  {
+    const char *comment = "(This file must be converted with BinHex";
+    while (!feof(f)) {
+      const char *s;
+      for (s = comment; *s; s++) {
+	c = getc(f);
+	if (c != *s)
+	  break;
+      }
+      /* skip to end of line */
+      while (c >= 0 && c != '\n' && c != '\r')
+	c = getc(f);
+      /* stop if read comment */
+      if (!*s)
+	goto found_comment;
+    }
+    /* failed */
+    return "no comment";
+  }
+
+ found_comment:
+  /* skip spaces, look for ':' */
+  for (c = ' '; isspace(c); c = getc(f)) ;
+  if (c != ':')
+    return "no file-start character";
+
+  /* found ':', process until you find another ':' */
+  last_char = -1;
+  after_x90 = bits = 0;
+  bitpos = 10;
+  for (c = getc(f); c >= 0; c = getc(f))
+    if (!isspace(c)) {
+      /* add 6 bits to bits */
+      if (value_table[c] == 255)
+	break;
+      bits |= (value_table[c] << bitpos);
+      bitpos -= 6;
+
+      /* output character(s) */
+      if (bitpos <= 2) {
+	int d = bits >> 8;
+	bits = (bits << 8) & 0xFF00;
+	bitpos += 8;
+	if (after_x90) {
+	  /* handle compression */
+	  if (d == 0) {
+	    last_char = 0x90;
+	    putc(0x90, tmpf);
+	  } else
+	    for (i = 1; i < d; i++)
+	      putc(last_char, tmpf);
+	  after_x90 = 0;
+	} else if (d == 0x90)
+	  after_x90 = 1;
+	else {
+	  last_char = d;
+	  putc(d, tmpf);
+	}
+      }
+    }
+  
+  if (c < 0)
+    return "unexpected EOF";
+  else if (c != ':')
+    return "bad character";
+
+  fflush(tmpf);
+  return 0;
+}
+
+int
+check_binhex_crc(FILE *f, int offset, int length)
+{
+  int crc = 0;
+  char buf[2048];
+  reposition(f, offset);
+  //length -= 2;
+  while (length > 0) {
+    int n = (length < 2048 ? length : 2048);
+    fread(buf, 1, n, f);
+    crc = hqx_crcbuf(crc, n, buf);
+    length -= n;
+  }
+  /*{ int r = read_two(f); crc = hqx_crcbuf(crc, 2, "\0\0");
+  fprintf(stderr, "%d %d\n", r, crc);
+  return crc == r;}*/
+  return crc == 0;
+}
+
+const char *
+check_binhex(FILE *f)
+{
+  int fname_len, data_len, rsrc_len, off;
+  
+  /* check lengths */
+  reposition(f, 0);
+  fname_len = read_one(f);
+  if (fname_len < 1 || fname_len > 63)
+    return "bad length";
+  reposition(f, 1 + fname_len + 11);
+  data_len = read_four(f);
+  rsrc_len = read_four(f);
+  if (data_len < 0 || rsrc_len < 0 || data_len >= 0x800000 || rsrc_len >= 0x800000)
+    return "bad length";
+
+  /* check version */
+  reposition(f, 1 + fname_len);
+  if (read_one(f) != 0)
+    return "bad version";
+
+  /* check CRC */
+  off = 1 + fname_len + 21;
+  if (!check_binhex_crc(f, 0, off))
+    return "bad header CRC";
+  if (!check_binhex_crc(f, off, data_len + 2))
+    return "bad data CRC";
+  if (!check_binhex_crc(f, off + data_len + 2, rsrc_len + 2))
+    return "bad resource fork CRC";
+
+  return 0;
+}
+
 int
 main(int argc, char **argv)
 {
   FILE *ifp = 0;
   FILE *ofp = 0;
+  struct pfb_writer w;
   const char *ifp_name = "<stdin>";
   int32 res_offset, res_data_offset, res_map_offset, type_list_offset;
   int32 post_type;
-  int num_types, num_of_type, num_extracted = 0, binary = 1;
-  int raw = 0, macbinary = 0, appledouble = 0;
+  int num_types, num_extracted = 0, pfb = 1;
+  int raw = 0, appledouble = 0, binhex = 0, macbinary = 0;
   
   Clp_Parser *clp =
     Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
@@ -435,12 +569,22 @@ main(int argc, char **argv)
       
      case RAW_OPT:
       raw = 1;
-      macbinary = appledouble = 0;
+      appledouble = binhex = macbinary = 0;
       break;
       
      case MACBINARY_OPT:
       macbinary = 1;
-      raw = appledouble = 0;
+      raw = appledouble = binhex = 0;
+      break;
+
+     case APPLEDOUBLE_OPT:
+      appledouble = 1;
+      raw = binhex = macbinary = 0;
+      break;
+
+     case BINHEX_OPT:
+      binhex = 1;
+      raw = appledouble = macbinary = 0;
       break;
       
      output_file:
@@ -456,22 +600,15 @@ main(int argc, char **argv)
       break;
       
      case PFB_OPT:
-      binary = 1;
+      pfb = 1;
       break;
       
      case PFA_OPT:
-      binary = 0;
+      pfb = 0;
       break;
       
      case LINE_LEN_OPT:
-      line_length = clp->val.i;
-      if (line_length < 4) {
-	line_length = 4;
-	error("warning: line length raised to %d", line_length);
-      } else if (line_length > 1024) {
-	line_length = 1024;
-	error("warning: line length lowered to %d", line_length);
-      }
+      blocklen = clp->val.i;
       break;
       
      case HELP_OPT:
@@ -481,7 +618,7 @@ main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("t1unmac (LCDF t1utils) %s\n", VERSION);
-      printf("Copyright (C) 1992-9 I. Lee Hetherington, Eddie Kohler et al.\n\
+      printf("Copyright (C) 1992-2000 I. Lee Hetherington, Eddie Kohler et al.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -521,15 +658,43 @@ particular purpose.\n");
   _setmode(_fileno(ifp), _O_BINARY);
   /* If we are processing a PFB (binary) output */
   /* file, we must set its file mode to binary. */
-  if (binary)
+  if (pfb)
     _setmode(_fileno(ofp), _O_BINARY);
 #endif
   
+  if (pfb)
+    init_pfb_writer(&w, blocklen, ofp);
+  else {
+    if (blocklen == -1)
+      blocklen = 64;
+    else if (blocklen < 4) {
+      blocklen = 4;
+      error("warning: line length raised to %d", blocklen);
+    } else if (blocklen > 1024) {
+      blocklen = 1024;
+      error("warning: line length lowered to %d", blocklen);
+    }
+  }
+
   /* check for non-seekable input */
-  if (fseek(ifp, 0, 0))
-    fatal_error("%s: isn't seekable\n\
-  (I can't read from stdin; give me a filename on the command line instead.)",
-		ifp_name);
+  if (fseek(ifp, 0, 0)) {
+    char buf[2048];
+    FILE *tmp = tmpfile();
+    if (!tmp)
+      fatal_error("cannot open temporary file: %s", strerror(errno));
+    while (!feof(ifp)) {
+      int i = fread(buf, 1, 2048, ifp);
+      if (i > 0)
+	fwrite(buf, 1, i, tmp);
+    }
+    if (ferror(ifp))
+      fatal_error("%s: %s", ifp_name, strerror(errno));
+    reposition(tmp, 0);
+    fflush(tmp);
+    if (ifp != stdin)
+      fclose(ifp);
+    ifp = tmp;
+  }
   
   /* check for empty file */
   fseek(ifp, 0, 2);
@@ -537,24 +702,30 @@ particular purpose.\n");
     fatal_error("%s: empty file\n\
   (Try re-transferring the files using MacBinary format.)",
 		ifp_name);
-
-  if (!raw && !macbinary && !appledouble) {
+  
+  reposition(ifp, 0);
+  if (!raw && !appledouble && !binhex && !macbinary) {
     /* check magic number, try to figure out what it is */
+    int i, magic;
+    magic = read_four(ifp);
     reposition(ifp, 0);
-    switch (read_four(ifp)) {
 
-     case APPLESINGLE_MAGIC:
-     case APPLEDOUBLE_MAGIC:
+    if (magic == APPLESINGLE_MAGIC || magic == APPLEDOUBLE_MAGIC)
       appledouble = 1;
-      break;
-
-     default:
+    else if ((magic & 0xFF000000) == 0)
       macbinary = 1;
-      break;
-
+    else {
+      binhex = 1;
+      for (i = 0; i < 4; i++, magic >>= 8)
+	if (!isprint(magic & 0xFF) && !isspace(magic & 0xFF))
+	  /* not an ASCII character, assume not BinHex */
+	  binhex = 0;
     }
+
+    if (!appledouble && !macbinary && !binhex)
+      fatal_error("%s: unknown file type", ifp_name);
   }
-    
+  
   if (raw) {
     /* raw resource file */
     res_offset = 0;
@@ -584,7 +755,7 @@ particular purpose.\n");
     const char *applewhat;
     int i, n;
 
-    /* check integrity of file */
+    /* check integrity */
     check = check_appledouble(ifp);
     if (check)
       fatal_error("%s: not an AppleDouble file (%s)", ifp_name, check);
@@ -602,7 +773,7 @@ particular purpose.\n");
       int type = read_four(ifp);
       if (type == 0)
 	fatal_error("%s: bad %s file (bad entry descriptor)", ifp_name, applewhat);
-      if (type == 2)
+      if (type == 2)		/* resource fork entry */
 	res_offset = read_four(ifp);
       else
 	(void) read_four(ifp);
@@ -610,9 +781,32 @@ particular purpose.\n");
     }
     if (res_offset < 0)
       fatal_error("%s: bad %s file (no resource fork)", ifp_name, applewhat);
+
+  } else if (binhex) {		/* BinHex file */
+    const char *check;
+    FILE *tmpf = tmpfile();
+    if (!tmpf)
+      fatal_error("cannot open temporary file: %s", strerror(errno));
+
+    /* check integrity */
+    check = translate_binhex(ifp, tmpf);
+    if (check)
+      fatal_error("%s: not a BinHex file (%s)", ifp_name, check);
+    check = check_binhex(tmpf);
+    if (check)
+      fatal_error("%s: bad BinHex file (%s)", ifp_name, check);
+
+    /* find resource offset */
+    reposition(tmpf, 0);
+    res_offset = read_one(tmpf);
+    reposition(tmpf, 1 + res_offset + 11);
+    res_offset += 22 + read_four(tmpf) + 2;
+    if (ifp != stdin)
+      fclose(ifp);
+    ifp = tmpf;
     
   } else {
-    fatal_error("%s: can't read strange format", ifp_name);
+    fatal_error("%s: strange format", ifp_name);
     exit(1);
   }
   
@@ -637,15 +831,32 @@ particular purpose.\n");
   
   while (num_types--) {
     if (read_four(ifp) == post_type) {
-      num_of_type = 1 + read_two(ifp);
-      reposition(ifp, type_list_offset + read_two(ifp));
-      while (num_of_type--) {
-	(void) read_two(ifp);                      /* ID */
-	(void) read_two(ifp);
-	(void) read_one(ifp);
-	extract_data(ifp, ofp, res_data_offset + read_three(ifp), binary);
-	++num_extracted;
-	(void) read_four(ifp);
+      int nrsrc = 1 + read_two(ifp);
+      int list_offset = type_list_offset + read_two(ifp);
+      int rsrc_pos = 0;
+      int want_id = 501;
+      int second_time = 1;
+      reposition(ifp, list_offset);
+      /* read resources sequentially, starting with ID 501, until we encounter
+	 an "end" resource or we can't find the next resource */
+      while (rsrc_pos < nrsrc) {
+	int offset = ftell(ifp);
+	int id = read_two(ifp);
+	if (id == want_id) {
+	  (void) read_two(ifp);
+	  (void) read_one(ifp);
+	  num_extracted++;
+	  if (!extract_data(ifp, ofp, &w, res_data_offset + read_three(ifp), pfb))
+	    break;
+	  second_time = 0;
+	  want_id++;
+	}
+	reposition(ifp, offset + 12);
+	rsrc_pos++;
+	if (rsrc_pos >= nrsrc && !second_time) {
+	  reposition(ifp, list_offset);
+	  rsrc_pos = 0;
+	}
       }
       break;
     } else {
@@ -653,9 +864,45 @@ particular purpose.\n");
       (void) read_two(ifp);
     }
   }
-  
+
+#if 0
+  reposition(ifp, type_list_offset);
+  num_types = read_two(ifp) + 1;
+  while (num_types--) {
+    int t = read_four(ifp);
+    int num_of_type = 1 + read_two(ifp);
+    int32 save_offset = ftell(ifp) + 2;
+    reposition(ifp, type_list_offset + read_two(ifp));
+    while (num_of_type--) {
+      FILE *f;
+      char buf[2048];
+      int x = ftell(ifp);
+      int i = read_two(ifp);	/* ID */
+      int crap = read_two(ifp);
+      int attrs = read_one(ifp);
+      sprintf(buf, "/tmp/x.%c%c%c%c.%d", (t>>24)&255, (t>>16)&255, (t>>8)&255, t&255, i);
+      if ((f = fopen(buf, "wb"))) {
+	int l;
+	reposition(ifp, res_data_offset + read_three(ifp));
+	l = read_four(ifp);
+	while (l > 0) {
+	  int n = (l < 2048 ? l : 2048);
+	  fread(buf, 1, n, ifp);
+	  fwrite(buf, 1, n, f);
+	  l -= n;
+	}
+	fclose(f);
+      }
+      reposition(ifp, x + 12);
+    }
+    reposition(ifp, save_offset);
+  }
+#endif
+
+  if (pfb)
+    pfb_writer_end(&w);
   if (num_extracted == 0)
-    error("this file doesn't seem to be a Macintosh font");
+    error("%s: not a Type 1 font (no POST resources)", ifp_name);
   
   fclose(ifp);
   fclose(ofp);

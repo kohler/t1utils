@@ -18,8 +18,31 @@ struct font_reader {
 void process_pfa(FILE *, const char *filename, struct font_reader *);
 void process_pfb(FILE *, const char *filename, struct font_reader *);
 
-/* whoever uses this code must provide a definition for this function */
+struct pfb_writer {
+  unsigned char *buf;
+  unsigned len;
+  unsigned max_len;
+  unsigned pos;
+  int blocktyp;
+  int binary_blocks_written;
+  FILE *f;
+};
+
+void init_pfb_writer(struct pfb_writer *, int, FILE *);
+void pfb_writer_output_block(struct pfb_writer *);
+void pfb_writer_grow_buf(struct pfb_writer *);
+void pfb_writer_end(struct pfb_writer *);
+#define PFB_OUTPUT_BYTE(w, b)	do { \
+	if ((w)->pos >= (w)->len) pfb_writer_grow_buf(w); \
+	(w)->buf[(w)->pos++] = (b); \
+      } while (0)
+
+int crcbuf(int crc, unsigned int len, unsigned char *buf);
+int hqx_crcbuf(int crc, unsigned int len, unsigned char *buf);
+
+/* whoever uses this code must provide a definition for these functions */
 extern void error(const char *, ...);
+extern void fatal_error(const char *, ...);
 
 #ifdef __cplusplus
 }
