@@ -185,7 +185,7 @@ handle_pfb_ascii(struct font_reader *fr, char *line, int len)
 	return pos - start;
       }
       
-    } else if (line[pos] == '\r' && line[pos] == '\n') {
+    } else if (pos < len - 1 && line[pos] == '\r' && line[pos+1] == '\n') {
       line[pos] = '\n'; line[pos+1] = 0;
       fr->output_ascii(line + start);
       start = pos + 2;
