@@ -1,5 +1,11 @@
 T1utils NEWS
 
+Version 1.10.1   12.Apr.1999
+
+* t1asm: Fixed bug when `-l' option wasn't provided. Caught by Giuseppe
+  Ghibò <ghibo@caesar.polito.it>.
+
+
 Version 1.10   11.Apr.1999
 
 * t1asm/t1disasm: Provide support for Type1C (Compact Font Format) font

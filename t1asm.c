@@ -727,7 +727,7 @@ particular purpose.\n");
   
  done:
   if (pfb) {
-    if (blocklen < -1)
+    if (blocklen == -1)
       blocklen = MAXBLOCKLEN;
     else if (blocklen < MINBLOCKLEN) {
       blocklen = MINBLOCKLEN;
@@ -737,7 +737,7 @@ particular purpose.\n");
       error("warning: block length lowered to %d", blocklen);
     }
   } else {
-    if (blocklen < -1)
+    if (blocklen == -1)
       blocklen = 64;
     else if (blocklen < 2) {
       blocklen = 2;
