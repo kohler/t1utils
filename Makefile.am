@@ -24,12 +24,12 @@ versionize:
 
 rpm: dist
 	buildarch=`rpm --showrc | awk '/^build arch/ { print $$4; }'` ; \
-	mkdir -p /tmp/rpmb/SOURCES /tmp/rpmb/RPMS/$$buildarch \
-	/tmp/rpmb/BUILD ; \
-	echo 'topdir: /tmp/rpmb' > /tmp/rpmb/rc ; \
-	cp $(PACKAGE)-$(VERSION).tar.gz /tmp/rpmb/SOURCES ; \
-	rpm --rcfile /tmp/rpmb/rc -bb rpm.spec ; \
-	cp /tmp/rpmb/RPMS/$$buildarch/*.rpm .
-	rm -rf /tmp/rpmb
+	mkdir -p /tmp/rpm-t1u/SOURCES /tmp/rpm-t1u/RPMS/$$buildarch \
+	/tmp/rpm-t1u/BUILD ; \
+	echo 'topdir: /tmp/rpm-t1u' > /tmp/rpm-t1u/rc ; \
+	cp $(PACKAGE)-$(VERSION).tar.gz /tmp/rpm-t1u/SOURCES ; \
+	rpm --rcfile /tmp/rpm-t1u/rc -bb rpm.spec ; \
+	cp /tmp/rpm-t1u/RPMS/$$buildarch/*.rpm .
+	rm -rf /tmp/rpm-t1u
 
 .PHONY: srclinks versionize rpm
