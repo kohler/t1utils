@@ -47,7 +47,7 @@
 
 /* Note: this is ANSI C. */
 
-#ifdef _MSDOS
+#if defined(_MSDOS) || defined(_WIN32)
   #include <fcntl.h>
   #include <io.h>
 #endif
@@ -83,8 +83,8 @@ typedef unsigned int uint16;
 
 typedef unsigned char byte;
 
-static FILE *ifp = stdin;
-static FILE *ofp = stdout;
+static FILE *ifp;
+static FILE *ofp;
 
 /* flags */
 static int pfb = 1;
@@ -646,8 +646,6 @@ Report bugs to <eddietwo@lcs.mit.edu>.\n", program_name);
 int main(int argc, char **argv)
 {
   char *p, *q, *r;
-  int input_given = 0;
-  int output_given = 0;
   
   Clp_Parser *clp =
     Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
@@ -672,9 +670,8 @@ int main(int argc, char **argv)
       
      output_file:
      case OUTPUT_OPT:
-      if (output_given)
+      if (ofp)
 	fatal_error("output file already specified");
-      output_given = 1;
       if (strcmp(clp->arg, "-") == 0)
 	ofp = stdout;
       else {
@@ -706,11 +703,10 @@ particular purpose.\n");
       break;
       
      case Clp_NotOption:
-      if (input_given && output_given)
+      if (ifp && ofp)
 	fatal_error("too many arguments");
-      else if (input_given)
+      else if (ifp)
 	goto output_file;
-      input_given = 1;
       if (strcmp(clp->arg, "-") == 0)
 	ifp = stdin;
       else {
@@ -731,7 +727,10 @@ particular purpose.\n");
   }
   
  done:
-#ifdef _MSDOS
+  if (!ifp) ifp = stdin;
+  if (!ofp) ofp = stdout;
+  
+#if defined(_MSDOS) || defined(_WIN32)
   /* If we are processing a PFB (binary) output */
   /* file, we must set its file mode to binary. */
   if (pfb)

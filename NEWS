@@ -1,5 +1,12 @@
 T1utils NEWS
 
+Version 1.7.2   11.Dec.1998
+
+* Integrated patches from Jan-Jaap var der Heijden
+  <J.J.vanderHeijden@student.utwente.nl> to support building t1utils under
+  32-bit Windows.
+
+
 Version 1.7.1   5.Dec.1998
 
 * The t1utils package now uses automake.

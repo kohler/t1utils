@@ -33,7 +33,7 @@
 
 /* Note: this is ANSI C. */
 
-#ifdef _MSDOS
+#if defined(_MSDOS) || defined(_WIN32)
   #include <fcntl.h>
   #include <getopt.h>
   #include <io.h>
@@ -278,14 +278,12 @@ Report bugs to <eddietwo@lcs.mit.edu>.\n", program_name);
 
 int main(int argc, char **argv)
 {
-  FILE *ifp = stdin;
-  FILE *ofp = stdout;
+  FILE *ifp = 0;
+  FILE *ofp = 0;
   int32 data_fork_size;
   int32 res_offset, res_data_offset, res_map_offset, type_list_offset;
   int32 post_type;
   int num_types, num_of_type, num_extracted = 0, binary = 0, raw = 0;
-  int input_given = 0;
-  int output_given = 0;
   
   Clp_Parser *clp =
     Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
@@ -306,9 +304,8 @@ int main(int argc, char **argv)
       
      output_file:
      case OUTPUT_OPT:
-      if (output_given)
+      if (ofp)
 	fatal_error("output file already specified");
-      output_given = 1;
       if (strcmp(clp->arg, "-") == 0)
 	ofp = stdout;
       else {
@@ -340,11 +337,10 @@ particular purpose.\n");
       break;
       
      case Clp_NotOption:
-      if (input_given && output_given)
+      if (ifp && ofp)
 	fatal_error("too many arguments");
-      else if (input_given)
+      else if (ifp)
 	goto output_file;
-      input_given = 1;
       if (strcmp(clp->arg, "-") == 0)
 	ifp = stdin;
       else {
@@ -365,14 +361,17 @@ particular purpose.\n");
   }
   
  done:
-  #ifdef _MSDOS
+  if (!ifp) ifp = stdin;
+  if (!ofp) ofp = stdout;
+  
+#if defined(_MSDOS) || defined(_WIN32)
   _setmode(_fileno(ifp), _O_BINARY);
   /* If we are processing a PFB (binary) output */
   /* file, we must set its file mode to binary. */
   if (binary)
     _setmode(_fileno(ofp), _O_BINARY);
-  #endif
-
+#endif
+  
   /* check for non-seekable input */
   if (fseek(ifp, 0, 0))
     fatal_error("input file isn't seekable\n\

@@ -1,5 +1,5 @@
 AC_INIT(t1ascii.c)
-AM_INIT_AUTOMAKE(t1utils, 1.7.1)
+AM_INIT_AUTOMAKE(t1utils, 1.7.2)
 
 AC_PROG_CC
 AC_C_CONST

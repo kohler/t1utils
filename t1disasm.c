@@ -50,7 +50,7 @@
 
 /* Note: this is ANSI C. */
 
-#ifdef _MSDOS
+#if defined(_MSDOS) || defined(_WIN32)
   #include <fcntl.h>
   #include <io.h>
 #endif
@@ -80,8 +80,8 @@ typedef unsigned int uint16;
 
 typedef unsigned char byte;
 
-static FILE *ifp = stdin;
-static FILE *ofp = stdout;
+static FILE *ifp;
+static FILE *ofp;
 static char line[LINESIZE];
 static int start_charstring = 0;
 static int final_ascii = 0;
@@ -146,21 +146,21 @@ static int bgetc()
      is_pfb == 2 means PFB binary section */
 
   c = fgetc(ifp);
-
+  
   if (c == EOF)
     return EOF;
-
+  
   if (first_byte) {
     /* Determine if this is a PFA or PFB file by looking at first byte. */
     if (c == 0x80) {
       is_pfb = 1;
       is_pfa = 0;
 
-      #ifdef _MSDOS
-	/* If we are processing a PFB (binary) input  */
-	/* file, we must set its file mode to binary. */
-	_setmode(_fileno(ifp), _O_BINARY);
-      #endif
+#if defined(_MSDOS) || defined(_WIN32)
+      /* If we are processing a PFB (binary) input  */
+      /* file, we must set its file mode to binary. */
+      _setmode(_fileno(ifp), _O_BINARY);
+#endif
 
     } else {
       is_pfb = 0;
@@ -292,10 +292,10 @@ static int egetc()
 {
   static int in_eexec = 0;
   int c;
-
+  
   if ((c = bgetc()) == EOF)
     return EOF;
-
+  
   if (!in_eexec) {
     if (immediate_eexec()) {
       /* start eexec decryption */
@@ -617,9 +617,6 @@ Report bugs to <eddietwo@lcs.mit.edu>.\n", program_name);
 
 int main(int argc, char **argv)
 {
-  int input_given = 0;
-  int output_given = 0;
-  
   Clp_Parser *clp =
     Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
   program_name = (char *)Clp_ProgramName(clp);
@@ -631,9 +628,8 @@ int main(int argc, char **argv)
       
      output_file:
      case OUTPUT_OPT:
-      if (output_given)
+      if (ofp)
 	fatal_error("output file already specified");
-      output_given = 1;
       if (strcmp(clp->arg, "-") == 0)
 	ofp = stdout;
       else {
@@ -657,11 +653,10 @@ particular purpose.\n");
       break;
       
      case Clp_NotOption:
-      if (input_given && output_given)
+      if (ifp && ofp)
 	fatal_error("too many arguments");
-      else if (input_given)
+      else if (ifp)
 	goto output_file;
-      input_given = 1;
       if (strcmp(clp->arg, "-") == 0)
 	ifp = stdin;
       else {
@@ -682,6 +677,8 @@ particular purpose.\n");
   }
   
  done:
+  if (!ifp) ifp = stdin;
+  if (!ofp) ofp = stdout;
   
   /* main loop---normally done when reach `mark currentfile closefile' on
      output (rest is garbage). */
