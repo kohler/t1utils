@@ -12,7 +12,7 @@
  * I. Lee Hetherington (ilh@lcs.mit.edu)
  *
  * 1.5 and later versions contain changes by, and are maintained by,
- * Eddie Kohler <eddietwo@lcs.mit.edu>.
+ * Eddie Kohler <kohler@icir.org>.
  *
  * New change log in `NEWS'. Old change log:
  *
@@ -47,7 +47,7 @@
 #include <limits.h>
 #include <stdarg.h>
 #include <errno.h>
-#include "clp.h"
+#include <lcdf/clp.h>
 #include "t1lib.h"
 
 typedef unsigned char byte;
@@ -156,7 +156,7 @@ Options:\n\
   -h, --help                    Print this message and exit.\n\
       --version                 Print version number and warranty and exit.\n\
 \n\
-Report bugs to <eddietwo@lcs.mit.edu>.\n", program_name);
+Report bugs to <kohler@icir.org>.\n", program_name);
 }
 
 
@@ -205,7 +205,7 @@ main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("t1binary (LCDF t1utils) %s\n", VERSION);
-      printf("Copyright (C) 1992-2001 I. Lee Hetherington, Eddie Kohler et al.\n\
+      printf("Copyright (C) 1992-2003 I. Lee Hetherington, Eddie Kohler et al.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");

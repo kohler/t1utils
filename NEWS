@@ -1,5 +1,11 @@
 T1utils NEWS
 
+Version 1.27   26.Mar.2003
+
+* t1ascii: Add optional warning when output lines are longer than 255
+  characters. Requested by Werner Lemberg <wl@gnu.org>.
+
+
 Version 1.26   16.Apr.2002
 
 * t1mac: Fix buglet (C++ comment, and temporary file left behind). Reported

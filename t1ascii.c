@@ -12,7 +12,7 @@
  * I. Lee Hetherington (ilh@lcs.mit.edu)
  *
  * 1.5 and later versions contain changes by, and are maintained by,
- * Eddie Kohler <eddietwo@lcs.mit.edu>.
+ * Eddie Kohler <kohler@icir.org>.
  *
  * New change log in `NEWS'. Old change log:
  *
@@ -47,47 +47,11 @@
 #include <limits.h>
 #include <stdarg.h>
 #include <errno.h>
-#include "clp.h"
+#include <lcdf/clp.h>
 #include "t1lib.h"
 
 static FILE *ofp;
 static int line_length = 64;
-
-
-/* PFA font_reader functions */
-
-static int hexcol = 0;
-
-static void
-pfa_output_ascii(char *data)
-{
-  if (hexcol) {
-    putc('\n', ofp);
-    hexcol = 0;
-  }
-  fputs(data, ofp);
-}
-
-static void
-pfa_output_binary(unsigned char *data, int len)
-{
-  static const char *hexchar = "0123456789abcdef";
-  for (; len > 0; len--, data++) {
-    /* trim hexadecimal lines to line_length columns */
-    if (hexcol >= line_length) {
-      putc('\n', ofp);
-      hexcol = 0;
-    }
-    putc(hexchar[(*data >> 4) & 0xf], ofp);
-    putc(hexchar[*data & 0xf], ofp);
-    hexcol += 2;
-  }
-}
-
-static void
-pfa_output_end()
-{
-}
 
 
 /*****
@@ -98,14 +62,18 @@ pfa_output_end()
 #define VERSION_OPT	302
 #define HELP_OPT	303
 #define LINE_LEN_OPT	304
+#define WARNINGS_OPT	305
 
 static Clp_Option options[] = {
   { "help", 0, HELP_OPT, 0, 0 },
   { "line-length", 'l', LINE_LEN_OPT, Clp_ArgInt, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
   { "version", 0, VERSION_OPT, 0, 0 },
+  { "warnings", 'w', WARNINGS_OPT, 0, Clp_Negate }
 };
-static char *program_name;
+static const char *program_name;
+static const char *ifp_filename = "<stdin>";
+static int line_length_warning = -1;
 
 void
 fatal_error(const char *message, ...)
@@ -149,12 +117,59 @@ Usage: %s [OPTION]... [INPUT [OUTPUT]]\n\
 Options:\n\
   -l, --line-length=NUM         Set max encrypted line length (default 64).\n\
   -o, --output=FILE             Write output to FILE.\n\
+  -w, --warnings                Warn on too-long lines.\n\
   -h, --help                    Print this message and exit.\n\
       --version                 Print version number and warranty and exit.\n\
 \n\
-Report bugs to <eddietwo@lcs.mit.edu>.\n", program_name);
+Report bugs to <kohler@icir.org>.\n", program_name);
 }
 
+
+/*****
+ * PFA font_reader functions
+ **/
+
+static int hexcol = 0;
+
+static void
+pfa_output_ascii(char *data)
+{
+    if (hexcol) {
+	putc('\n', ofp);
+	hexcol = 0;
+    }
+    if (line_length_warning == 0 && strlen(data) > 256) {
+	line_length_warning = 1;
+	fprintf(stderr, "%s: warning: %s has lines longer than 255 characters\n%s: warning: (This may cause problems with older printers.)\n", program_name, ifp_filename, program_name);
+    }
+    fputs(data, ofp);
+}
+
+static void
+pfa_output_binary(unsigned char *data, int len)
+{
+  static const char *hexchar = "0123456789abcdef";
+  for (; len > 0; len--, data++) {
+    /* trim hexadecimal lines to line_length columns */
+    if (hexcol >= line_length) {
+      putc('\n', ofp);
+      hexcol = 0;
+    }
+    putc(hexchar[(*data >> 4) & 0xf], ofp);
+    putc(hexchar[*data & 0xf], ofp);
+    hexcol += 2;
+  }
+}
+
+static void
+pfa_output_end()
+{
+}
+
+
+/*****
+ * main()
+ **/
 
 int
 main(int argc, char **argv)
@@ -162,7 +177,6 @@ main(int argc, char **argv)
   struct font_reader fr;
   int c;
   FILE *ifp = 0;
-  const char *ifp_filename = "<stdin>";
   
   Clp_Parser *clp =
     Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
@@ -195,15 +209,19 @@ main(int argc, char **argv)
 	if (!ofp) fatal_error("%s: %s", clp->arg, strerror(errno));
       }
       break;
+
+     case WARNINGS_OPT:
+       line_length_warning = (clp->negated ? -1 : 0);
+       break;
       
      case HELP_OPT:
       usage();
       exit(0);
       break;
-      
+
      case VERSION_OPT:
       printf("t1ascii (LCDF t1utils) %s\n", VERSION);
-      printf("Copyright (C) 1992-2001 I. Lee Hetherington, Eddie Kohler et al.\n\
+      printf("Copyright (C) 1992-2003 I. Lee Hetherington, Eddie Kohler et al.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -215,12 +233,14 @@ particular purpose.\n");
 	fatal_error("too many arguments");
       else if (ifp)
 	goto output_file;
-      if (strcmp(clp->arg, "-") == 0)
+      if (strcmp(clp->arg, "-") == 0) {
+	ifp_filename = "<stdin>";
 	ifp = stdin;
-      else {
+      } else {
 	ifp_filename = clp->arg;
 	ifp = fopen(clp->arg, "rb");
-	if (!ifp) fatal_error("%s: %s", clp->arg, strerror(errno));
+	if (!ifp)
+	    fatal_error("%s: %s", clp->arg, strerror(errno));
       }
       break;
       
@@ -236,8 +256,12 @@ particular purpose.\n");
   }
   
  done:
-  if (!ifp) ifp = stdin;
-  if (!ofp) ofp = stdout;
+  if (!ifp)
+      ifp = stdin;
+  if (!ofp)
+      ofp = stdout;
+  if (line_length > 255 && line_length_warning == 0)
+      fprintf(stderr, "%s: warning: selected --line-length is greater than 255\n", program_name);
   
 #if defined(_MSDOS) || defined(_WIN32)
   /* As we are processing a PFB (binary) input */

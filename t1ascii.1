@@ -1,4 +1,4 @@
-.ds V 1.26
+.ds V 1.27
 .TH T1ASCII 1 "" "Version \*V"
 .SH NAME
 t1ascii \- convert type-1 font from binary to ASCII
@@ -24,6 +24,12 @@ Set the maximum length of encrypted lines in the output to
 (These are the lines consisting wholly of hexadecimal digits.) The default
 is 64.
 '
+.TP 5
+.BR \-\-warnings ", " \-w
+Warn when the input font contains lines longer than 255 characters.
+Long lines don't strictly conform to Adobe's Document Structuring
+Conventions, and may cause problems with older software.
+'
 .SH "SEE ALSO"
 .LP
 .BR t1binary (1),
@@ -36,7 +42,7 @@ is 64.
 .SH AUTHORS
 Lee Hetherington (ilh@lcs.mit.edu)
 .br
-Eddie Kohler (eddietwo@lcs.mit.edu)
+Eddie Kohler (kohler@icir.org)
 .PP
 Ported to Microsoft C/C++ Compiler and MS-DOS operating system by
 Kai-Uwe Herbing (herbing@netmbx.netmbx.de).

@@ -4,7 +4,7 @@
  * 1 fonts stored in MacBinary (I or II), AppleSingle, AppleDouble, BinHex, or
  * raw resource fork format.
  *
- * Copyright (c) 2000-2002 by Eddie Kohler, all rights reserved.
+ * Copyright (c) 2000-2003 by Eddie Kohler, all rights reserved.
  *
  * Permission is hereby granted to use, modify, and distribute this program
  * for any purpose provided this copyright notice and the one below remain
@@ -27,7 +27,7 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <time.h>
-#include "clp.h"
+#include <lcdf/clp.h>
 #include "t1lib.h"
 
 typedef unsigned char byte;
@@ -810,7 +810,7 @@ Options:\n\
   -h, --help                  Print this message and exit.\n\
       --version               Print version number and warranty and exit.\n\
 \n\
-Report bugs to <eddietwo@lcs.mit.edu>.\n", program_name);
+Report bugs to <kohler@icir.org>.\n", program_name);
 }
 
 
@@ -886,7 +886,7 @@ main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("t1mac (LCDF t1utils) %s\n", VERSION);
-      printf("Copyright (C) 2000-2002 Eddie Kohler et al.\n\
+      printf("Copyright (C) 2000-2003 Eddie Kohler et al.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
