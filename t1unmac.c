@@ -339,8 +339,8 @@ main(int argc, char **argv)
       
      case LINE_LEN_OPT:
       line_length = clp->val.i;
-      if (line_length < 2) {
-	line_length = 2;
+      if (line_length < 4) {
+	line_length = 4;
 	error("warning: line length raised to %d", line_length);
       } else if (line_length > 1024) {
 	line_length = 1024;

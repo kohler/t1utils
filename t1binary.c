@@ -71,7 +71,7 @@ static byte *blockbuf = 0;
 static uint32 blocklen = 0;
 static uint32 max_blocklen = 0xFFFFFFFFUL;
 static uint32 blockpos = 0;
-static int blocktyp = ASCII;
+static int blocktyp = PFB_ASCII;
 
 static int binary_blocks_written = 0;
 
@@ -88,7 +88,7 @@ static void pfb_output_block()
     return;
   
   /* output four-byte block length */
-  putc(MARKER, ofp);
+  putc(PFB_MARKER, ofp);
   putc(blocktyp, ofp);
   putc((int)(blockpos & 0xff), ofp);
   putc((int)((blockpos >> 8) & 0xff), ofp);
@@ -100,7 +100,7 @@ static void pfb_output_block()
   
   /* mark block buffer empty and uninitialized */
   blockpos =  0;
-  if (blocktyp == BINARY)
+  if (blocktyp == PFB_BINARY)
     binary_blocks_written++;
 }
 
@@ -153,31 +153,31 @@ static void pfb_output_byte(byte b)
 static void
 pfb_output_ascii(char *s)
 {
-  if (blocktyp == BINARY) {
+  if (blocktyp == PFB_BINARY) {
     pfb_output_block();
-    blocktyp = ASCII;
+    blocktyp = PFB_ASCII;
   }
   for (; *s; s++)
     pfb_output_byte((byte)*s);
 }
 
 static void
-pfb_output_binary(char *s, int len)
+pfb_output_binary(unsigned char *s, int len)
 {
-  if (blocktyp == ASCII) {
+  if (blocktyp == PFB_ASCII) {
     pfb_output_block();
-    blocktyp = BINARY;
+    blocktyp = PFB_BINARY;
   }
   for (; len > 0; len--, s++)
-    pfb_output_byte((byte)*s);
+    pfb_output_byte(*s);
 }
 
 static void
 pfb_output_end()
 {
   pfb_output_block();
-  putc(MARKER, ofp);
-  putc(DONE, ofp);
+  putc(PFB_MARKER, ofp);
+  putc(PFB_DONE, ofp);
 }
 
 
@@ -346,7 +346,7 @@ particular purpose.\n");
   ungetc(c, ifp);
   
   /* do the file */
-  if (c == MARKER)
+  if (c == PFB_MARKER)
     process_pfb(ifp, ifp_filename, &fr);
   else if (c == '%')
     process_pfa(ifp, ifp_filename, &fr);

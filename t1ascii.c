@@ -72,17 +72,11 @@ pfa_output_ascii(char *data)
     putc('\n', ofp);
     hexcol = 0;
   }
-  for (; *data; data++) {
-    if (*data == '\r') {
-      putc('\n', ofp);
-      if (data[1] == '\n') data++;
-    } else
-      putc(*data, ofp);
-  }
+  fputs(data, ofp);
 }
 
 static void
-pfa_output_binary(char *data, int len)
+pfa_output_binary(unsigned char *data, int len)
 {
   static char *hexchar = "0123456789abcdef";
   for (; len > 0; len--, data++) {
@@ -188,8 +182,8 @@ main(int argc, char **argv)
       
      case LINE_LEN_OPT:
       line_length = clp->val.i;
-      if (line_length < 2) {
-	line_length = 2;
+      if (line_length < 4) {
+	line_length = 4;
 	error("warning: line length raised to %d", line_length);
       } else if (line_length > 1024) {
 	line_length = 1024;
@@ -232,7 +226,7 @@ particular purpose.\n");
 	ifp = stdin;
       else {
 	ifp_filename = clp->arg;
-	ifp = fopen(clp->arg, "r");
+	ifp = fopen(clp->arg, "rb");
 	if (!ifp) fatal_error("%s: %s", clp->arg, strerror(errno));
       }
       break;
@@ -268,7 +262,7 @@ particular purpose.\n");
   ungetc(c, ifp);
   
   /* do the file */
-  if (c == MARKER)
+  if (c == PFB_MARKER)
     process_pfb(ifp, ifp_filename, &fr);
   else if (c == '%')
     process_pfa(ifp, ifp_filename, &fr);

@@ -65,6 +65,7 @@
 #include <stdarg.h>
 #include <errno.h>
 #include "clp.h"
+#include "t1lib.h"
 
 /* int32 must be at least 32-bit and uint16 must be at least 16-bit */
 #if INT_MAX >= 0x7FFFFFFFUL
@@ -78,305 +79,28 @@ typedef unsigned short uint16;
 typedef unsigned int uint16;
 #endif
 
-#define LINESIZE 512
-
-#define cgetc()		cdecrypt((byte)(egetc() & 0xff))
-
 typedef unsigned char byte;
 
-static FILE *ifp;
 static FILE *ofp;
-static char line[LINESIZE + 1];	/* account for '\0' at end of line */
-static int start_charstring = 0;
-static int final_ascii = 0;
 static int lenIV = 4;
 static char cs_start[10];
 static int unknown = 0;
 
 /* decryption stuff */
-static uint16 er, cr;
-static uint16 c1 = 52845, c2 = 22719, cr_default = 4330;
+static uint16 c1 = 52845, c2 = 22719;
+static uint16 cr_default = 4330;
+static uint16 er_default = 55665;
 
-/* This function looks for `currentfile eexec' string and returns 1 once found.
-   If c == 0, then simply check the status. */
-
-static int eexec_scanner(int c)
-{
-  /* Allow for arbitrary whitespace before the \n in "currentfile eexec\n",
-     required by some fonts. Reported by Tom Kacvinsky <tjk@ams.org>. */
-  static char *key = "currentfile eexec\n";
-  static char *p = 0;
-  
-  if (!p)
-    p = key;
-  
-  if (c && *p) {
-    if ((char) (c & 0xff) == *p)
-      ++p;
-    else if (*p == '\n' && isspace(c))
-      /* nada */;
-    else
-      p = key;
-  }
-  
-  return *p == '\0';
-}
-
-/* This function returns the value of a single hex digit. */
-
-static int hexval(char c)
-{
-  if (c >= 'A' && c <= 'F')
-    return c - 'A' + 10;
-  else if (c >= 'a' && c <= 'f')
-    return c - 'a' + 10;
-  else if (c >= '0' && c <= '9')
-    return c - '0';
-  else
-    return 0;
-}
-
-/* This function returns a single character at a time from a PFA or PFB file.
-   This stream is mixed ASCII and binary bytes.  For PFB files, the section
-   headers are removed, and \r is replaced by \n in ASCII sections.  For PFA
-   files, the hexdecimal data is turned into binary bytes. */
-
-static int bgetc()
-{
-  static int first_byte = 1;
-  static int is_pfa = 0;
-  static int is_pfb = 0;
-  static int32 pfb_remaining = 0;
-  int c, val;
-
-  /* is_pfa == 1 means PFA initial ASCII section
-     is_pfa == 2 means PFA hexadecimal section
-     is_pfb == 1 means PFB ASCII section
-     is_pfb == 2 means PFB binary section */
-
-  c = fgetc(ifp);
-  
-  if (c == EOF)
-    return EOF;
-  
-  if (first_byte) {
-    /* Determine if this is a PFA or PFB file by looking at first byte. */
-    if (c == 0x80) {
-      is_pfb = 1;
-      is_pfa = 0;
-
-#if defined(_MSDOS) || defined(_WIN32)
-      /* If we are processing a PFB (binary) input  */
-      /* file, we must set its file mode to binary. */
-      _setmode(_fileno(ifp), _O_BINARY);
-#endif
-
-    } else {
-      is_pfb = 0;
-      is_pfa = 1;
-    }
-    first_byte = 0;
-  }
-
-  if (is_pfb) {
-    /* PFB */
-    if (pfb_remaining == 0) {
-      /* beginning of block---we know c == 0x80 at this point */
-      switch (fgetc(ifp)) {
-      case 1:
-	is_pfb = 1;
-	break;
-      case 2:
-	is_pfb = 2;
-	break;
-      case 3:
-	return EOF;
-      default:
-	fprintf(stderr, "error: is this really a PFB file?\n");
-	exit(1);
-      }
-      /* get block length */
-      pfb_remaining = (int32)(fgetc(ifp) & 0xff);
-      pfb_remaining |= (int32)(fgetc(ifp) & 0xff) << 8;
-      pfb_remaining |= (int32)(fgetc(ifp) & 0xff) << 16;
-      pfb_remaining |= (int32)(fgetc(ifp) & 0xff) << 24;
-      /* get character */
-      c = fgetc(ifp);
-      if (c == EOF)
-	return EOF;
-    }
-    --pfb_remaining;
-    /* in ASCII section change return to newline */
-    if (is_pfb == 1 && c == '\r')
-      c = '\n';
-    (void) eexec_scanner(c);
-    return c;
-  } else {
-    /* PFA */
-    if (final_ascii) {
-      return c;
-    } else if (is_pfa == 1) {
-      /* in initial ASCII */
-      if (eexec_scanner(c))
-	is_pfa = 2;
-      return c;
-    } else {
-      /* in hexadecimal */
-      while (isspace(c))
-	c = fgetc(ifp);
-      val = hexval((char)c) << 4;
-      val |= hexval((char)(c = fgetc(ifp)));
-      if (c == EOF)
-	return EOF;
-      return val;
-    }
-  }
-}
-
-/* This functions returns a line of (non-decrypted) characters.  A line is
-   terminated by length (including terminating null) greater than LINESIZE, a
-   newline \n.  The line, including the terminating newline, is put into
-   line[]. */
-
-static void bgetline()
-{
-  static int ungot_c = -1;
-  int c;
-  char *p = line;
-
-  if (ungot_c >= 0) {
-    c = ungot_c;
-    ungot_c = -1;
-  } else
-    c = bgetc();
-  
-  while (1) {
-    if (c == EOF) break;
-    *p++ = (char) c;
-    
-    if (c == '\r') {
-      p[-1] = '\n';
-      c = bgetc();
-      if (c != '\n') ungot_c = c;
-      break;
-    } else if (c == '\n')
-      break;
-    
-    if (p >= line + LINESIZE) break;
-    
-    c = bgetc();
-  }
-  
-  *p = '\0';
-}
-
-/* Two separate decryption functions because eexec and charstring decryption
-   must proceed in parallel. */
-
-static byte edecrypt(byte cipher)
-{
-  byte plain;
-
-  plain = (byte)(cipher ^ (er >> 8));
-  er = (uint16)((cipher + er) * c1 + c2);
-  return plain;
-}
-
-static byte cdecrypt(byte cipher)
-{
-  byte plain;
-
-  if (lenIV < 0)
-    /* not doing charstring decryption */
-    return cipher;
-  
-  plain = (byte)(cipher ^ (cr >> 8));
-  cr = (uint16)((cipher + cr) * c1 + c2);
-  return plain;
-}
-
-/* This function returns 1 the first time the eexec_scanner returns 1. */
-
-static int immediate_eexec()
-{
-  static int reported = 0;
-  
-  if (!reported && eexec_scanner(0)) {
-    reported = 1;
-    return 1;
-  } else {
-    return 0;
-  }
-}
-
-/* This function returns a single byte at a time through (possible) eexec
-   decryption.  When immediate_eexec returns 1 it fires up the eexec decryption
-   machinery. */
-
-static int egetc()
-{
-  static int in_eexec = 0;
-  int c;
-  
-  if ((c = bgetc()) == EOF)
-    return EOF;
-  
-  if (!in_eexec) {
-    if (immediate_eexec()) {
-      /* start eexec decryption */
-      in_eexec = 1;
-      er = 55665;
-      /* toss out four random bytes */
-      (void) edecrypt((byte)(bgetc() & 0xff));
-      (void) edecrypt((byte)(bgetc() & 0xff));
-      (void) edecrypt((byte)(bgetc() & 0xff));
-      (void) edecrypt((byte)(bgetc() & 0xff));
-    }
-    return c;
-  } else {
-    return (int)edecrypt((byte)(c & 0xff));
-  }
-}
-
-/* This function returns a line of eexec decrypted characters.  A line is
-   terminated by length (including terminating null) greater than LINESIZE, a
-   newline \n, or the special charstring start sequence in cs_start[] (usually
-   ` -| ' or ` RD ').  The line, including the terminating newline or
-   charstring start sequence is put into line[].  If terminated by a charstring
-   start sequence, the flag start_charstring is set to 1. */
-
-static void egetline() { int c; int l = strlen(cs_start); char *p = line;
-
-  start_charstring = 0;
-  while (p < line + LINESIZE) {
-    c = egetc();
-    if (c == EOF)
-      break;
-    *p++ = (char) c;
-    if (l > 0 &&
-	p >= line + l + 2 &&
-	p[-2 - l] == ' ' &&
-	p[-1] == ' ' &&
-	strncmp(p - l - 1, cs_start, l) == 0) {
-      p -= l + 2;
-      start_charstring = 1;
-      break;
-    }
-    if (c == '\r') {                              /* map \r to \n */
-      p[-1] = '\n';
-      break;
-    }
-    if (c == '\n')
-      break;
-  }
-  *p = '\0';
-}
+static int error_count = 0;
+void fatal_error(const char *message, ...);
+void error(const char *message, ...);
 
 /* If the line contains an entry of the form `/lenIV <num>' then set the global
    lenIV to <num>.  This indicates the number of random bytes at the beginning
    of each charstring. */
 
-static void set_lenIV()
+static void
+set_lenIV(char *line)
 {
   char *p = strstr(line, "/lenIV ");
 
@@ -386,16 +110,15 @@ static void set_lenIV()
   }
 }
 
-static void set_cs_start()
+static void
+set_cs_start(char *line)
 {
   char *p, *q, *r;
 
   if ((p = strstr(line, "string currentfile"))) {
     /* enforce presence of `readstring' -- 5/29/99 */
-    if (!strstr(line, "readstring")) {
-      fprintf(stderr, "skipping\n");
+    if (!strstr(line, "readstring"))
       return;
-    }
     /* locate the name of the charstring start command */
     *p = '\0';					  /* damage line[] */
     q = strrchr(line, '/');
@@ -412,7 +135,8 @@ static void set_cs_start()
 
 /* Subroutine to output strings. */
 
-static void output(char *string)
+static void
+output(char *string)
 {
   fprintf(ofp, "%s", string);
 }
@@ -421,10 +145,11 @@ static void output(char *string)
    then a newline is output.  If at start of line (start == 1), prefix token
    with tab, otherwise a space. */
 
-static void output_token(char *token)
+static void
+output_token(char *token)
 {
   static int start = 1;
-
+  
   if (strcmp(token, "\n") == 0) {
     fprintf(ofp, "\n");
     start = 1;
@@ -434,59 +159,62 @@ static void output_token(char *token)
   }
 }
 
-/* Subroutine to decrypt and ASCII-ify tokens in charstring data.  First, the
-   length (in bytes) of the charstring is determined from line[].  Then the
-   charstring decryption machinery is fired up, skipping the first lenIV bytes.
-   Finally, the decrypted tokens are expanded into human-readable form. */
+/* Subroutine to decrypt and ASCII-ify tokens in charstring data. The
+   charstring decryption machinery is fired up, skipping the first lenIV
+   bytes, and the decrypted tokens are expanded into human-readable form. */
 
-static void do_charstring()
+static void
+decrypt_charstring(unsigned char *line, int len)
 {
-  int l = strlen(line);
-  char *p = line + l - 1;
-  int cs_len;
   int i;
-  int b;
   int32 val;
   char buf[20];
 
-  while (p >= line && *p != ' ' && *p != '\t')
-    --p;
-  cs_len = atoi(p);
+  /* decrypt charstring */
+  if (lenIV >= 0) {
+    /* only decrypt if lenIV >= 0 -- negative lenIV means unencrypted
+       charstring. Thanks to Tom Kacvinsky <tjk@ams.org> */
+    int i;
+    uint16 cr = cr_default;
+    byte plain;
+    for (i = 0; i < len; i++) {
+      byte cipher = line[i];
+      plain = (byte)(cipher ^ (cr >> 8));
+      cr = (uint16)((cipher + cr) * c1 + c2);
+      line[i] = plain;
+    }
+    line += lenIV;
+    len -= lenIV;
+  }
 
-  *p = '\0';
-  output(line);
-  output(" {\n");
-
-  cr = cr_default;
-  for (i = 0; i < lenIV; i++, cs_len--)
-    (void) cgetc();
-
-  while (cs_len > 0) {
-    --cs_len;
-    b = cgetc();
+  /* handle each charstring command */
+  for (i = 0; i < len; i++) {
+    byte b = line[i];
+    
     if (b >= 32) {
-      if (b >= 32 && b <= 246) {
+      if (b >= 32 && b <= 246)
 	val = b - 139;
-      } else if (b >= 247 && b <= 250) {
-	--cs_len;
-	val = (b - 247)*256 + 108 + cgetc();
+      else if (b >= 247 && b <= 250) {
+	i++;
+	val = (b - 247)*256 + 108 + line[i];
       } else if (b >= 251 && b <= 254) {
-	--cs_len;
-	val = -(b - 251)*256 - 108 - cgetc();
+	i++;
+	val = -(b - 251)*256 - 108 - line[i];
       } else {
-	cs_len -= 4;
-	val =  (cgetc() & 0xff) << 24;
-	val |= (cgetc() & 0xff) << 16;
-	val |= (cgetc() & 0xff) <<  8;
-	val |= (cgetc() & 0xff) <<  0;
+	val =  (line[i+1] & 0xff) << 24;
+	val |= (line[i+2] & 0xff) << 16;
+	val |= (line[i+3] & 0xff) <<  8;
+	val |= (line[i+4] & 0xff) <<  0;
 	/* in case an int32 is larger than four bytes---sign extend */
 #if INT_MAX > 0x7FFFFFFFUL
 	if (val & 0x80000000)
 	  val |= ~0x7FFFFFFF;
 #endif
+	i += 4;
       }
       sprintf(buf, "%d", val);
       output_token(buf);
+      
     } else {
       switch (b) {
       case 0: output_token("error"); break;		/* special */
@@ -515,9 +243,9 @@ static void do_charstring()
       case 27: output_token("hhcurveto"); break;	/* Type 2 */
       case 28: {		/* Type 2 */
 	/* short integer */
-	cs_len -= 2;
-	val =  (cgetc() & 0xff) << 8;
-	val |= (cgetc() & 0xff);
+	val =  (line[i+1] & 0xff) << 8;
+	val |= (line[i+2] & 0xff);
+	i += 2;
 	if (val & 0x8000)
 	  val |= ~0x7FFF;
 	sprintf(buf, "%d", val);
@@ -527,8 +255,9 @@ static void do_charstring()
       case 30: output_token("vhcurveto"); break;
       case 31: output_token("hvcurveto"); break;
       case 12:
-	--cs_len;
-	switch (b = cgetc()) {
+	i++;
+	b = line[i];
+	switch (b) {
 	case 0: output_token("dotsection"); break;	/* Type 1 ONLY */
 	case 1: output_token("vstem3"); break;		/* Type 1 ONLY */
 	case 2: output_token("hstem3"); break;		/* Type 1 ONLY */
@@ -579,7 +308,255 @@ static void do_charstring()
       output_token("\n");
     }
   }
-  output("\t}");
+  if (i > len) {
+    output("\terror\n");
+    error("disassembly error: charstring too short");
+  }
+}
+
+
+/* Disassembly font_reader functions */
+
+static int in_eexec = 0;
+static unsigned char *save = 0;
+static int save_len = 0;
+static int save_cap = 0;
+
+static void
+append_save(unsigned char *line, int len)
+{
+  if (save_len + len >= save_cap) {
+    unsigned char *new_save;
+    if (!save_cap) save_cap = 1024;
+    while (save_len + len >= save_cap) save_cap *= 2;
+    new_save = (unsigned char *)malloc(save_cap);
+    if (!new_save)
+      fatal_error("out of memory");
+    memcpy(new_save, save, save_len);
+    free(save);
+    save = new_save;
+  }
+  memcpy(save + save_len, line, len);
+  save_len += len;
+}
+
+/* returns 1 if next \n should be deleted */
+
+static int
+eexec_line(unsigned char *line, int line_len)
+{
+  int cs_start_len = strlen(cs_start);
+  int pos;
+  int first_space;
+  int digits;
+  int cut_newline = 0;
+  
+  /* append this data to the end of `save' if necessary */
+  if (save_len) {
+    append_save(line, line_len);
+    line = save;
+    line_len = save_len;
+  }
+  
+  if (!line_len)
+    return 0;
+  
+  /* Look for charstring start */
+  
+  /* skip first word */
+  for (pos = 0; pos < line_len && !isspace(line[pos]); pos++) ;
+  if (pos >= line_len) goto not_charstring;
+  
+  /* skip spaces */
+  first_space = pos;
+  while (pos < line_len && isspace(line[pos])) pos++;
+  if (pos >= line_len || !isdigit(line[pos])) goto not_charstring;
+
+  /* skip number */
+  digits = pos;
+  while (pos < line_len && isdigit(line[pos])) pos++;
+  
+  /* check for subr (another number) */
+  if (pos < line_len - 1 && isspace(line[pos]) && isdigit(line[pos+1])) {
+    first_space = pos;
+    digits = pos + 1;
+    for (pos = digits; pos < line_len && isdigit(line[pos]); pos++) ;
+  }
+  
+  /* check for charstring start */
+  if (pos + 2 + cs_start_len < line_len
+      && pos > digits
+      && line[pos] == ' '
+      && strncmp(line + pos + 1, cs_start, cs_start_len) == 0
+      && line[pos + 1 + cs_start_len] == ' ') {
+    /* check if charstring is long enough */
+    int cs_len = atoi(line + digits);
+    if (pos + 2 + cs_start_len + cs_len < line_len) {
+      /* long enough! */
+      if (line[line_len - 1] == '\r') {
+	line[line_len - 1] = '\n';
+	cut_newline = 1;
+      }
+      fprintf(ofp, "%.*s {\n", first_space, line);
+      decrypt_charstring(line + pos + 2 + cs_start_len, cs_len);
+      pos += 2 + cs_start_len + cs_len;
+      fprintf(ofp, "\t}%.*s", line_len - pos, line + pos);
+      save_len = 0;
+      return cut_newline;
+    } else {
+      /* not long enough! */
+      if (line != save)
+	append_save(line, line_len);
+      return 0;
+    }
+  }
+  
+  /* otherwise, just output the line */
+ not_charstring:
+  if (line[line_len - 1] == '\r') {
+    line[line_len - 1] = '\n';
+    cut_newline = 1;
+  }
+  set_lenIV(line);
+  set_cs_start(line);
+  fprintf(ofp, "%.*s", line_len, line);
+  save_len = 0;
+  
+  /* look for `currentfile closefile' to see if we should stop decrypting */
+  if (strstr(line, "currentfile closefile") != 0)
+    in_eexec = -1;
+  
+  return cut_newline;
+}
+
+static int
+all_zeroes(char *string)
+{
+  if (*string != '0') return 0;
+  while (*string == '0')
+    string++;
+  return *string == '\0' || *string == '\n';
+}
+
+static void
+disasm_output_ascii(char *line)
+{
+  int was_in_eexec = in_eexec;
+  in_eexec = 0;
+  
+  /* if we just came from the "ASCII part" of an eexec section, we need to
+     process the saved lines */
+  if (was_in_eexec < 0) {
+    int i = 0;
+    int save_char = 0;		/* note: save[] is unsigned char * */
+    
+    while (i < save_len) {
+      /* grab a line */
+      int start = i;
+      while (i < save_len && save[i] != '\r' && save[i] != '\n')
+	i++;
+      if (i < save_len) {
+	if (i < save_len - 1 && save[i] == '\r' && save[i+1] == '\n')
+	  save_char = -1;
+	else
+	  save_char = save[i+1];
+	save[i] = '\n';
+	save[i+1] = 0;
+      } else
+	save[i] = 0;
+
+      /* output it */
+      disasm_output_ascii(save + start);
+
+      /* repair damage */
+      if (i < save_len) {
+	if (save_char >= 0) {
+	  save[i+1] = save_char;
+	  i++;
+	} else
+	  i += 2;
+      }
+    }
+    save_len = 0;
+  }
+  
+  if (!all_zeroes(line))
+    output(line);
+}
+
+/* collect until '\n' or end of binary section */
+
+static void
+disasm_output_binary(unsigned char *data, int len)
+{
+  static int ignore_newline;
+  static uint16 er;
+  
+  byte plain;
+  int i;
+  
+  /* if we're in the ASCII portion of a binary section, just save this data */
+  if (in_eexec < 0) {
+    append_save(data, len);
+    return;
+  }
+  
+  /* eexec initialization */
+  if (in_eexec == 0) {
+    er = er_default;
+    ignore_newline = 0;
+    in_eexec = 0;
+  }
+  if (in_eexec < 4) {
+    for (i = 0; i < len && in_eexec < 4; i++, in_eexec++) {
+      byte cipher = data[i];
+      plain = (byte)(cipher ^ (er >> 8));
+      er = (uint16)((cipher + er) * c1 + c2);
+      data[i] = plain;
+    }
+    data += i;
+    len -= i;
+  }
+  
+  /* now make lines: collect until '\n' or '\r' and pass them off to
+     eexec_line. */
+  i = 0;
+  while (in_eexec > 0) {
+    int start = i;
+    
+    for (; i < len; i++) {
+      byte cipher = data[i];
+      plain = (byte)(cipher ^ (er >> 8));
+      er = (uint16)((cipher + er) * c1 + c2);
+      data[i] = plain;
+      if (plain == '\r' || plain == '\n') break;
+    }
+    
+    if (ignore_newline && start < i && data[start] == '\n') {
+      ignore_newline = 0;
+      continue;
+    }
+    
+    if (i >= len) {
+      if (start < len) append_save(data + start, i - start);
+      break;
+    }
+    
+    i++;
+    ignore_newline = eexec_line(data + start, i - start);
+  }
+  
+  /* if in_eexec < 0, we have some plaintext lines sitting around in a binary
+     section of the PFB. save them for later */
+  if (in_eexec < 0 && i < len)
+    append_save(data + i, len - i);
+}
+
+static void
+disasm_output_end()
+{
+  /* take care of leftover saved data */
+  disasm_output_ascii("");
 }
 
 
@@ -599,7 +576,7 @@ static Clp_Option options[] = {
 static char *program_name;
 
 void
-fatal_error(char *message, ...)
+fatal_error(const char *message, ...)
 {
   va_list val;
   va_start(val, message);
@@ -610,13 +587,14 @@ fatal_error(char *message, ...)
 }
 
 void
-error(char *message, ...)
+error(const char *message, ...)
 {
   va_list val;
   va_start(val, message);
   fprintf(stderr, "%s: ", program_name);
   vfprintf(stderr, message, val);
   fputc('\n', stderr);
+  error_count++;
 }
 
 void
@@ -649,6 +627,11 @@ Report bugs to <eddietwo@lcs.mit.edu>.\n", program_name);
 int
 main(int argc, char **argv)
 {
+  struct font_reader fr;
+  int c;
+  FILE *ifp = 0;
+  const char *ifp_filename = "<stdin>";
+  
   Clp_Parser *clp =
     Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
   program_name = (char *)Clp_ProgramName(clp);
@@ -692,7 +675,8 @@ particular purpose.\n");
       if (strcmp(clp->arg, "-") == 0)
 	ifp = stdin;
       else {
-	ifp = fopen(clp->arg, "r");
+	ifp_filename = clp->arg;
+	ifp = fopen(clp->arg, "rb");
 	if (!ifp) fatal_error("%s: %s", clp->arg, strerror(errno));
       }
       break;
@@ -712,41 +696,28 @@ particular purpose.\n");
   if (!ifp) ifp = stdin;
   if (!ofp) ofp = stdout;
   
-  /* main loop---normally done when reach `mark currentfile closefile' on
-     output (rest is garbage). */
+#if defined(_MSDOS) || defined(_WIN32)
+  /* As we might be processing a PFB (binary) input file, we must set its file
+     mode to binary. */
+  _setmode(_fileno(ifp), _O_BINARY);
+#endif
   
-  while (1) {
-    egetline();
-    if (line[0] == '\0')
-      break;
-    if (start_charstring)
-      do_charstring();
-    else {
-      set_lenIV();
-      set_cs_start();
-      output(line);
-      /* 2/14/99 -- happy Valentine's day! -- don't look for `mark currentfile
-	 closefile'; the `mark' might be on a different line */
-      if (strstr(line, "currentfile closefile") != 0)
-	break;
-    }
-  }
+  /* prepare font reader */
+  fr.output_ascii = disasm_output_ascii;
+  fr.output_binary = disasm_output_binary;
+  fr.output_end = disasm_output_end;
   
-  /* Final wrap-up: skip lines containing all zeros */
-  final_ascii = 1;
-  while (!feof(ifp) && !ferror(ifp)) {
-    int num_spanned;
-    bgetline();
-    num_spanned = strspn(line, "0\n\r\t ");
-    if (line[num_spanned] != '\0')
-      break;
-  }
+  /* peek at first byte to see if it is the PFB marker 0x80 */
+  c = getc(ifp);
+  ungetc(c, ifp);
   
-  /* Output any remaining PostScript */
-  while (line[0] || (!feof(ifp) && !ferror(ifp))) {
-    output(line);
-    bgetline();
-  }
+  /* do the file */
+  if (c == PFB_MARKER)
+    process_pfb(ifp, ifp_filename, &fr);
+  else if (c == '%')
+    process_pfa(ifp, ifp_filename, &fr);
+  else
+    fatal_error("%s does not start with font marker (`%' or 0x80)");
   
   fclose(ifp);
   fclose(ofp);
@@ -757,5 +728,5 @@ particular purpose.\n");
 	   : "encountered %d unknown charstring command"),
 	  unknown);
   
-  return 0;
+  return (error_count ? 1 : 0);
 }

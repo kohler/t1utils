@@ -7,7 +7,7 @@ man_MANS = t1ascii.1 t1binary.1 t1asm.1 t1disasm.1 t1unmac.1
 t1ascii_SOURCES = clp.h clp.c t1lib.h t1lib.c t1ascii.c
 t1binary_SOURCES = clp.h clp.c t1lib.h t1lib.c t1binary.c
 t1asm_SOURCES = clp.h clp.c t1asm.c
-t1disasm_SOURCES = clp.h clp.c t1disasm.c
+t1disasm_SOURCES = clp.h clp.c t1lib.h t1lib.c t1disasm.c
 t1unmac_SOURCES = clp.h clp.c t1unmac.c
 
 LDADD = @LIBOBJS@

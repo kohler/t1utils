@@ -17,10 +17,14 @@
 #include <ctype.h>
 #include <string.h>
 #include "t1lib.h"
-#define LINESIZE 512
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define PFA_ASCII	1
+#define PFA_EEXEC_TEST	2
+#define PFA_HEX		3
+#define PFA_BINARY	4
 
 /* This function returns the value (0-15) of a single hex digit.  It returns
    0 for an invalid hex digit. */
@@ -65,12 +69,15 @@ translate_hex_string(char *s)
 static int
 all_zeroes(char *string)
 {
+  if (*string == '\0' || *string == '\n') return 0;
   while (*string == '0')
     string++;
   return *string == '\0' || *string == '\n';
 }
 
 /* This function handles the entire file. */
+
+#define LINESIZE 1024
 
 void
 process_pfa(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
@@ -81,10 +88,13 @@ process_pfa(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
   
   /* Don't use fgets() in case line-endings are indicated by bare \r's, as
      occurs in Macintosh fonts. */
+
+  /* 2.Aug.1999 - At the behest of Tom Kacvinsky <tjk@ams.org>, support binary
+     PFA fonts. */
   
   char line[LINESIZE];
   int c = 0;
-  int blocktyp = ASCII;
+  int blocktyp = PFA_ASCII;
   
   while (c != EOF) {
     char *p = line;
@@ -98,31 +108,48 @@ process_pfa(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
     if (p == line + LINESIZE - 1)
       /* buffer overrun: don't append newline even if we have it */
       ungetc(c, ifp);
-    else if (c == '\r') {
+    else if (c == '\r' && blocktyp == PFA_ASCII) {
       /* change CR or CR/LF into LF */
       c = getc(ifp);
       if (c != '\n') ungetc(c, ifp);
       *p++ = '\n';
-    } else if (c == '\n')
-      *p++ = '\n';
+    } else if (c != EOF)
+      *p++ = c;
     
     *p = 0;
     
+    /* check immediately after "currentfile eexec" for ASCII or binary */
+    if (blocktyp == PFA_EEXEC_TEST) {
+      char *last = p;
+      for (p = line; *p && isspace(*p); p++) ;
+      if (!*p)
+	continue;
+      else if (isxdigit(p[0]) && isxdigit(p[1])
+	       && isxdigit(p[2]) && isxdigit(p[3]))
+	blocktyp = PFA_HEX;
+      else
+	blocktyp = PFA_BINARY;
+      memmove(line, p, last - p);
+      p = line + (last - p);
+    }
+    
     /* now that we have the line, handle it */
-    if (blocktyp == ASCII) {
+    if (blocktyp == PFA_ASCII) {
       fr->output_ascii(line);
       if (strncmp(line, "currentfile eexec", 17) == 0) {
 	for (p = line + 17; isspace(*p); p++) ;
-	if (!*p) blocktyp = BINARY;
+	if (!*p) blocktyp = PFA_EEXEC_TEST;
       }
-    } else { /* blocktyp == BINARY */
-      if (all_zeroes(line)) {
+      
+    } else { /* blocktyp == PFA_HEX || blocktyp == PFA_BINARY */
+      if (all_zeroes(line)) {	/* XXX not safe */
 	fr->output_ascii(line);
-	blocktyp = ASCII;
-      } else {
+	blocktyp = PFA_ASCII;
+      } else if (blocktyp == PFA_HEX) {
 	int len = translate_hex_string(line);
-	fr->output_binary(line, len);
-      }
+	if (len) fr->output_binary((unsigned char *)line, len);
+      } else
+	fr->output_binary((unsigned char *)line, p - line);
     }
   }
   
@@ -131,6 +158,49 @@ process_pfa(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
 
 /* Process a PFB file. */
 
+/* XXX Doesn't handle "currentfile eexec" as intelligently as process_pfa
+   does. */
+
+static int
+handle_pfb_ascii(struct font_reader *fr, char *line, int len)
+{
+  /* Divide PFB_ASCII blocks into lines */
+  int start = 0;
+  
+  while (1) {
+    int pos = start;
+    
+    while (pos < len && line[pos] != '\n' && line[pos] != '\r')
+      pos++;
+    
+    if (pos >= len) {
+      if (pos == start)
+	return 0;
+      else if (start == 0 && pos == LINESIZE - 1) {
+	line[pos] = 0;
+	fr->output_ascii(line);
+	return 0;
+      } else {
+	memmove(line, line + start, pos - start);
+	return pos - start;
+      }
+      
+    } else if (line[pos] == '\r' && line[pos] == '\n') {
+      line[pos] = '\n'; line[pos+1] = 0;
+      fr->output_ascii(line + start);
+      start = pos + 2;
+      
+    } else {
+      char save = line[pos+1];
+      line[pos] = '\n'; line[pos+1] = 0;
+      fr->output_ascii(line + start);
+      line[pos+1] = save;
+      start = pos + 1;
+    }
+  }
+}
+
+
 void
 process_pfb(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
 {
@@ -138,22 +208,24 @@ process_pfb(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
   int block_len = 0;
   int c = 0;
   int filepos = 0;
-  char line[LINESIZE + 1];
+  int linepos = 0;
+  char line[LINESIZE];
   
   while (1) {
     while (block_len == 0) {
       c = getc(ifp);
       blocktyp = getc(ifp);
-      if (c != MARKER
-	  || (blocktyp != ASCII && blocktyp != BINARY && blocktyp != DONE)) {
+      if (c != PFB_MARKER
+	  || (blocktyp != PFB_ASCII && blocktyp != PFB_BINARY
+	      && blocktyp != PFB_DONE)) {
 	if (c == EOF || blocktyp == EOF)
 	  error("%s corrupted: no end-of-file marker", ifp_filename);
 	else
 	  error("%s corrupted: bad block marker at position %d",
 		ifp_filename, filepos);
-	blocktyp = DONE;
+	blocktyp = PFB_DONE;
       }
-      if (blocktyp == DONE)
+      if (blocktyp == PFB_DONE)
 	goto done;
       
       block_len = getc(ifp) & 0xFF;
@@ -163,29 +235,37 @@ process_pfb(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
       if (feof(ifp)) {
 	error("%s corrupted: bad block length at position %d",
 	      ifp_filename, filepos);
-	blocktyp = DONE;
+	blocktyp = PFB_DONE;
 	goto done;
       }
       filepos += 6;
     }
-    
+
+    /* read the block in its entirety, in LINESIZE chunks */
     while (block_len > 0) {
-      int n = (block_len > LINESIZE ? LINESIZE : block_len);
-      int actual = fread(line, 1, n, ifp);
+      int rest = LINESIZE - 1 - linepos; /* leave space for '\0' */
+      int n = (block_len > rest ? rest : block_len);
+      int actual = fread(line + linepos, 1, n, ifp);
       if (actual != n) {
 	error("%s corrupted: block short by %d bytes at position %d",
 	      ifp_filename, block_len - actual, filepos);
 	block_len = actual;
       }
       
-      if (blocktyp == ASCII) {
-	line[actual] = 0;
-	fr->output_ascii(line);
-      } else
-	fr->output_binary(line, actual);
+      if (blocktyp == PFB_BINARY)
+	fr->output_binary((unsigned char *)line, actual);
+      else
+	linepos = handle_pfb_ascii(fr, line, linepos + actual);
       
       block_len -= actual;
       filepos += actual;
+    }
+    
+    /* handle any leftover line */
+    if (linepos > 0) {
+      line[linepos] = 0;
+      fr->output_ascii(line);
+      linepos = 0;
     }
   }
   

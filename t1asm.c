@@ -351,6 +351,8 @@ static void getline()
   }
   
   *p = '\0';
+  if (active && !start_charstring && !comment)
+    active = 0;
 }
 
 /* This function wraps-up the eexec-encrypted data and writes ASCII trailer.
@@ -360,32 +362,20 @@ static void getline()
 static void eexec_end(void)
 {
   int i, j;
-
+  
   if (pfb) {
     output_block();
     blocktyp = ASCII;
   } else {
     putc('\n', ofp);
   }
-
+  
   in_eexec = active = 0;
-
+  
   for (i = 0; i < 8; i++) {
     for (j = 0; j < 64; j++)
       eexec_byte('0');
     eexec_byte('\n');
-  }
-
-  /* There may be additional code. */
-  while (!feof(ifp) && !ferror(ifp)) {
-    getline();
-    eexec_string(line);
-  }
-
-  if (pfb) {
-    output_block();
-    putc(MARKER, ofp);
-    putc(DONE, ofp);
   }
 }
 
@@ -678,11 +668,11 @@ int main(int argc, char **argv)
 	if (!ofp) fatal_error("%s: %s", clp->arg, strerror(errno));
       }
       break;
-
+      
      case PFB_OPT:
       pfb = 1;
       break;
-
+      
      case PFA_OPT:
       pfb = 0;
       break;
@@ -739,8 +729,8 @@ particular purpose.\n");
   } else {
     if (blocklen == -1)
       blocklen = 64;
-    else if (blocklen < 2) {
-      blocklen = 2;
+    else if (blocklen < 4) {
+      blocklen = 4;
       error("warning: line length raised to %d", blocklen);
     } else if (blocklen > 1024) {
       blocklen = 1024;
@@ -788,10 +778,6 @@ particular purpose.\n");
 	}
       } else if (strncmp(line, "/lenIV", 6) == 0) {
 	lenIV = atoi(line + 6);
-      } else if ((p = strstr(line, "/Subrs")) && isdigit(p[7])) {
-	ever_active = active = 1;
-      } else if ((p = strstr(line, "/CharStrings")) && isdigit(p[13])) {
-	ever_active = active = 1;
       } else if ((p = strstr(line, "string currentfile"))
 		 && strstr(line, "readstring")) { /* enforce `readstring' */
 	/* locate the name of the charstring start command */
@@ -806,12 +792,19 @@ particular purpose.\n");
 	}
 	*p = 's';                                   /* repair line[] */
       }
-      
-    } else if (strstr(line, "currentfile closefile")) {
-      /* 2/14/99 -- happy Valentine's day! -- don't look for `mark currentfile
-         closefile'; the `mark' might be on a different line */
-      eexec_string(line);
-      break;
+    }
+
+    if (!active) {
+      if ((p = strstr(line, "/Subrs")) && isdigit(p[7]))
+	ever_active = active = 1;
+      else if ((p = strstr(line, "/CharStrings")) && isdigit(p[13]))
+	ever_active = active = 1;
+      else if (strstr(line, "currentfile closefile")) {
+	/* 2/14/99 -- happy Valentine's day! -- don't look for `mark
+	   currentfile closefile'; the `mark' might be on a different line */
+	eexec_string(line);
+	break;
+      }
     }
     
     /* output line data */
@@ -827,11 +820,20 @@ particular purpose.\n");
   /* Handle remaining PostScript after the eexec section */
   if (in_eexec)
     eexec_end();
+  
+  /* There may be additional code. */
   while (!feof(ifp) && !ferror(ifp)) {
     getline();
     eexec_string(line);
   }
   
+  if (pfb) {
+    output_block();
+    putc(MARKER, ofp);
+    putc(DONE, ofp);
+  }
+
+  /* the end! */
   if (!ever_active)
     error("warning: no charstrings found in input file");
   fclose(ifp);

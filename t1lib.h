@@ -4,14 +4,14 @@
 extern "C" {
 #endif
 
-#define MARKER   128
-#define ASCII    1
-#define BINARY   2
-#define DONE     3
+#define PFB_MARKER	128
+#define PFB_ASCII	1
+#define PFB_BINARY	2
+#define PFB_DONE	3
 
 struct font_reader {
   void (*output_ascii)(char *);
-  void (*output_binary)(char *, int);
+  void (*output_binary)(unsigned char *, int);
   void (*output_end)();
 };
 

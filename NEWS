@@ -1,5 +1,20 @@
 T1utils NEWS
 
+Version 1.13   2.Aug.1999
+
+* t1disasm: Complete rewrite. It now uses t1lib.c functions; the goal is to
+  handle PFA and PFB fonts consistently. This has been extensively tested,
+  but there may be bugs.
+
+* t1disasm, t1asm: Fixed to support fonts with multiple Subrs and
+  CharStrings sections, like some old Oblique fonts.
+
+* PFA minimum line length raised to 4.
+
+* t1ascii, t1binary, t1disasm: Changes in t1lib.c to support reading binary
+  PFA fonts. Requested by Tom Kacvinsky <tjk@ams.org>.
+
+
 Version 1.12   1.Aug.1999
 
 * t1ascii, t1binary, t1asm, t1disasm: Support fonts with whitespace
