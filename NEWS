@@ -1,5 +1,11 @@
 T1utils NEWS
 
+Version 1.18   2.May.2000
+
+* t1mac: Fixed bug where generated files appeared corrupted to Macintoshes.
+  Reported by Marten Thavenius <marten.thavenius@bahnhof.se>.
+
+
 Version 1.17   27.Apr.2000
 
 * Added new program, `t1mac', which translates PFA or PFB fonts into

@@ -1,7 +1,8 @@
 /* t1unmac/unpost
  *
- * This program converts Macintosh type-1 fonts stored in MacBinary (I or II)
- * format or raw resource fork to PFA and PFB formats.
+ * This program converts Macintosh Type 1 fonts stored in MacBinary (I or II),
+ * AppleSingle, AppleDouble, BinHex, or raw resource fork format to PFA and
+ * PFB formats.
  *
  * Copyright (c) 1992 by I. Lee Hetherington, all rights reserved.
  *
@@ -28,8 +29,7 @@
  * specific to the MS-DOS version is encapsulated with #ifdef _MSDOS
  * ... #endif, where _MSDOS is an identifier, which is automatically
  * defined, if you compile with the Microsoft C/C++ Compiler.
- *
- */
+ * */
 
 /* Note: this is ANSI C. */
 
@@ -323,23 +323,23 @@ check_macbinary(FILE *ifp)
   
 #if 0
   /* write out bullshit */
-  if (0) {int t;
+  {int t;
     reposition(ifp, 65);
     t = read_four(ifp);
     fprintf(stderr, "Type %c%c%c%c\n", (t>>24)&255, (t>>16)&255, (t>>8)&255, t&255);
     t = read_four(ifp);
     fprintf(stderr, "Creator %c%c%c%c\n", (t>>24)&255, (t>>16)&255, (t>>8)&255, t&255);
     t = read_one(ifp);
-    fprintf(stderr, "Finder flags 1 %d\n", t);
+    fprintf(stderr, "Finder flags 1 %02x\n", t);
     read_one(ifp);
     t = read_two(ifp);
-    fprintf(stderr, "horizpos %d\n", t);
+    fprintf(stderr, "horizpos %04x\n", t);
     t = read_two(ifp);
-    fprintf(stderr, "vertpos %d\n", t);
+    fprintf(stderr, "vertpos %04x\n", t);
     t = read_two(ifp);
     fprintf(stderr, "folder id %d\n", t);
     t = read_one(ifp);
-    fprintf(stderr, "protected? %d\n", t);
+    fprintf(stderr, "protected? %x\n", t);
     t = read_one(ifp);
     t = read_four(ifp);
     fprintf(stderr, "data len %d\n", t);
@@ -359,7 +359,7 @@ check_macbinary(FILE *ifp)
     }
     fprintf(stderr, "getinfo len %d\n", t);
     t = read_one(ifp);
-    fprintf(stderr, "finderflags 2 %d\n", t);
+    fprintf(stderr, "finderflags 2 %02x\n", t);
     reposition(ifp, 116);
     t = read_four(ifp);
     fprintf(stderr, "total len %d\n", t);
@@ -864,6 +864,18 @@ particular purpose.\n");
   }
 
 #if 0
+  system("/bin/rm -f /tmp/x.*");
+  {
+    FILE *f;
+    int i;
+    reposition(ifp, res_offset + 16);
+    if ((f = fopen("/tmp/x.systemarea", "wb"))) {
+      for (i = res_offset + 16; i < res_data_offset; i++) {
+	putc(getc(ifp), f);
+      }
+      fclose(f);
+    }
+  }
   reposition(ifp, type_list_offset);
   num_types = read_two(ifp) + 1;
   while (num_types--) {

@@ -1,14 +1,14 @@
 /* t1mac
  *
- * This program takes an Adobe Type-1 font program in ASCII (PFA) format and
- * converts it to binary (PFB) format.
+ * This program converts Type 1 fonts in PFA or PFB format into Macintosh Type
+ * 1 fonts stored in MacBinary (I or II), AppleSingle, AppleDouble, BinHex, or
+ * raw resource fork format.
  *
  * Copyright (c) 2000 by Eddie Kohler, all rights reserved.
  *
  * Permission is hereby granted to use, modify, and distribute this program
  * for any purpose provided this copyright notice and the one below remain
- * intact.
- */
+ * intact. */
 
 /* Note: this is ANSI C. */
 
@@ -45,7 +45,7 @@ void fatal_error(const char *message, ...);
 void error(const char *message, ...);
 
 /* resource fork layout */
-#define RFORK_HEADERLEN 16
+#define RFORK_HEADERLEN 256
 #define RFORK_MAP_RESERVEDLEN 22
 #define RFORK_MAP_HEADERLEN 28
 #define RFORK_RTYPE_LEN 8
@@ -443,7 +443,7 @@ output_applesingle(FILE *rf, int32 rf_len, const char *filename, FILE *f,
 		   int appledouble)
 {
   uint32 offset;
-  int i, len = strlen(filename);
+  int i, nentries, len = strlen(filename);
   if (appledouble)		/* magic number */
     write_four(APPLEDOUBLE_MAGIC, f);
   else
@@ -451,10 +451,11 @@ output_applesingle(FILE *rf, int32 rf_len, const char *filename, FILE *f,
   write_four(APPLESINGLE_VERSION, f); /* version number */
   for (i = 0; i < 4; i++)
     write_four(0, f);		/* filler */
-  write_two(appledouble ? 4 : 5, f); /* number of entries */
+  nentries = (appledouble ? 4 : 5);
+  write_two(nentries, f); /* number of entries */
 
   /* real name entry */
-  offset = APPLESINGLE_HEADERLEN + 3 * APPLESINGLE_ENTRYLEN;
+  offset = APPLESINGLE_HEADERLEN + nentries * APPLESINGLE_ENTRYLEN;
   write_four(APPLESINGLE_REALNAME_ENTRY, f);
   write_four(offset, f);
   write_four(len, f);
@@ -843,7 +844,7 @@ particular purpose.\n");
   /* output FREF */
   output_new_rsrc(0x46524546, 256, 32, "LWFN\0\0\0", 7);
   /* output BNDL */
-  output_new_rsrc(0x424E4442, 256, 32, "ASPF\0\0\0\1ICN#\0\0\0\0\1\0FREF\0\0\0\0\1\0", 28);
+  output_new_rsrc(0x424E444C, 256, 32, "ASPF\0\0\0\1ICN#\0\0\0\0\1\0FREF\0\0\0\0\1\0", 28);
   /* output ASPF */
   output_new_rsrc(0x41535046, 0, 0, "\032Adobe Systems Incorporated", 27);
 
