@@ -235,21 +235,33 @@ static int bgetc()
 
 static void bgetline()
 {
+  static int ungot_c = -1;
   int c;
   char *p = line;
 
-  while (p < line + LINESIZE) {
+  if (ungot_c >= 0) {
+    c = ungot_c;
+    ungot_c = -1;
+  } else
     c = bgetc();
-    if (c == EOF)
-      break;
+  
+  while (1) {
+    if (c == EOF) break;
     *p++ = (char) c;
-    if (c == '\r') {                              /* map \r to \n */
+    
+    if (c == '\r') {
       p[-1] = '\n';
+      c = bgetc();
+      if (c != '\n') ungot_c = c;
       break;
-    }
-    if (c == '\n')
+    } else if (c == '\n')
       break;
+    
+    if (p >= line + LINESIZE) break;
+    
+    c = bgetc();
   }
+  
   *p = '\0';
 }
 
@@ -703,20 +715,26 @@ particular purpose.\n");
       do_charstring();
     else
       output(line);
-    if (strcmp(line, "mark currentfile closefile\n") == 0)
+    /* 2/14/99 -- happy Valentine's day! -- don't look for `mark currentfile
+       closefile'; the `mark' might be on a different line */
+    if (strstr(line, "currentfile closefile") != 0)
       break;
-    }
+  }
   
-  /* Final wrap-up: check for any PostScript after the cleartomark. */
+  /* Final wrap-up: skip lines containing all zeros */
   final_ascii = 1;
-  while (bgetline(), line[0] != '\0') {
-    if (strncmp(line, "cleartomark", 11) == 0) {
-      if (line[11] && line[11] != '\n')
-	output(line + 11);
-      while (bgetline(), line[0] != '\0')
-	output(line);
+  while (!feof(ifp) && !ferror(ifp)) {
+    int num_spanned;
+    bgetline();
+    num_spanned = strspn(line, "0\n\r\t ");
+    if (line[num_spanned] != '\0')
       break;
-    }
+  }
+  
+  /* Output any remaining PostScript */
+  while (line[0] || (!feof(ifp) && !ferror(ifp))) {
+    output(line);
+    bgetline();
   }
   
   fclose(ifp);

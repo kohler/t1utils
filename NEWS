@@ -1,5 +1,14 @@
 T1utils NEWS
 
+Version 1.9   14.Feb.1999
+
+* t1asm/t1disasm: Be more robust on fonts that don't end in `mark
+  currentfile closefile'. John Vromans <JVromans@squirrel.nl> provided a
+  font that ended with `mark' on one line and `currentfile closefile' on
+  another; t1asm and t1disasm did not recognize the encrypted section of
+  the font had ended, and generated some garbage.
+
+
 Version 1.8   2.Jan.1999
 
 * Added some more Type 2 commands (flex, flex1, hflex, hflex1) from a

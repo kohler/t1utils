@@ -353,7 +353,7 @@ static void getline()
    If output is in PFB format then this entails flushing binary block and
    starting an ASCII block. */
 
-static void eexec_end(int have_mark)
+static void eexec_end(void)
 {
   int i, j;
 
@@ -371,8 +371,6 @@ static void eexec_end(int have_mark)
       eexec_byte('0');
     eexec_byte('\n');
   }
-  if (have_mark)
-    eexec_string("cleartomark\n");
 
   /* There may be additional code. */
   while (!feof(ifp) && !ferror(ifp)) {
@@ -762,7 +760,6 @@ particular purpose.\n");
      without /Subrs sections and provided a patch. */
   
   while (!feof(ifp) && !ferror(ifp)) {
-    
     getline();
     
     if (!ever_active) {
@@ -789,10 +786,11 @@ particular purpose.\n");
 	*p = 's';                                   /* repair line[] */
       }
       
-    } else if (strstr(line, "mark currentfile closefile")) {
+    } else if (strstr(line, "currentfile closefile")) {
+      /* 2/14/99 -- happy Valentine's day! -- don't look for `mark currentfile
+         closefile'; the `mark' might be on a different line */
       eexec_string(line);
-      eexec_end(1);
-      goto file_done;
+      break;
     }
     
     /* output line data */
@@ -804,9 +802,15 @@ particular purpose.\n");
       parse_charstring();
     }
   }
-  eexec_end(0);
+
+  /* Handle remaining PostScript after the eexec section */
+  if (in_eexec)
+    eexec_end();
+  while (!feof(ifp) && !ferror(ifp)) {
+    getline();
+    eexec_string(line);
+  }
   
- file_done:
   if (!ever_active)
     error("warning: no charstrings found in input file");
   fclose(ifp);
