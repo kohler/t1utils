@@ -1,6 +1,6 @@
 T1utils NEWS
 
-Version 1.30
+Version 1.30   6.Jan.2003
 
 * All: Support fonts, such as those in PostScript files printed by
   acroread, where "currentfile eexec" is not followed by a newline.
