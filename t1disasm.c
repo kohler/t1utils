@@ -124,7 +124,7 @@ set_cs_start(char *line)
 /* Subroutine to output strings. */
 
 static void
-output(char *string)
+output(const char *string)
 {
   fprintf(ofp, "%s", string);
 }
@@ -134,7 +134,7 @@ output(char *string)
    with tab, otherwise a space. */
 
 static void
-output_token(char *token)
+output_token(const char *token)
 {
   static int start = 1;
   
@@ -162,7 +162,6 @@ decrypt_charstring(unsigned char *line, int len)
   if (lenIV >= 0) {
     /* only decrypt if lenIV >= 0 -- negative lenIV means unencrypted
        charstring. Thanks to Tom Kacvinsky <tjk@ams.org> */
-    int i;
     uint16_t cr = cr_default;
     byte plain;
     for (i = 0; i < len; i++) {
@@ -419,12 +418,13 @@ eexec_line(unsigned char *line, int line_len)
 }
 
 static int
-all_zeroes(char *string)
+all_zeroes(const char *string)
 {
-  if (*string != '0') return 0;
-  while (*string == '0')
-    string++;
-  return *string == '\0' || *string == '\n';
+    if (*string != '0')
+	return 0;
+    while (*string == '0')
+	string++;
+    return *string == '\0' || *string == '\n';
 }
 
 static void
@@ -544,8 +544,9 @@ disasm_output_binary(unsigned char *data, int len)
 static void
 disasm_output_end()
 {
-  /* take care of leftover saved data */
-  disasm_output_ascii("");
+    /* take care of leftover saved data */
+    static char crap[1] = "";
+    disasm_output_ascii(crap);
 }
 
 

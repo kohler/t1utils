@@ -98,7 +98,7 @@ static uint16_t c1 = 52845, c2 = 22719;
 
 /* table of charstring commands */
 static struct command {
-  char *name;
+  const char *name;
   int one, two;
 } command_table[] = {
   { "abs", 12, 9 },		/* Type 2 */
@@ -196,7 +196,7 @@ static byte cencrypt(byte plain)
 
 static void output_byte(byte b)
 {
-  static char *hexchar = "0123456789abcdef";
+  static const char *hexchar = "0123456789abcdef";
   static int hexcol = 0;
   
   if (pfb) {
@@ -345,7 +345,7 @@ static void eexec_end(void)
 
 static int command_compare(const void *key, const void *item)
 {
-  return strcmp((char *) key, ((struct command *) item)->name);
+  return strcmp((const char *) key, ((const struct command *) item)->name);
 }
 
 /* This function returns 1 if the string is an integer and 0 otherwise. */

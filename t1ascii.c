@@ -71,7 +71,7 @@ pfa_output_ascii(char *data)
 static void
 pfa_output_binary(unsigned char *data, int len)
 {
-  static char *hexchar = "0123456789abcdef";
+  static const char *hexchar = "0123456789abcdef";
   for (; len > 0; len--, data++) {
     /* trim hexadecimal lines to line_length columns */
     if (hexcol >= line_length) {

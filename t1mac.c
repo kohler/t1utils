@@ -56,8 +56,8 @@ void error(const char *message, ...);
 #define T1_FINDERFLAGS 33	/* Bundle + Inited */
 
 #define MAX_RSRC_LEN 2048
-static byte buf[MAX_RSRC_LEN];
-static int bufpos;
+static byte rbuf[MAX_RSRC_LEN];
+static int rbufpos;
 static int blocktyp;
 
 static char *font_name;
@@ -315,7 +315,7 @@ output_new_rsrc(const char *rtype, int rid, int attrs,
 static void
 init_current_post(void)
 {
-  bufpos = 2;
+  rbufpos = 2;
   cur_post_id = 501;
   blocktyp = POST_ASCII;
 }
@@ -323,12 +323,12 @@ init_current_post(void)
 static void
 output_current_post(void)
 {
-  if (blocktyp != POST_END && bufpos <= 2)
+  if (blocktyp != POST_END && rbufpos <= 2)
     return;
-  buf[0] = blocktyp;
-  buf[1] = 0;
-  output_new_rsrc("POST", cur_post_id, 0, (char *)buf, bufpos);
-  bufpos = 2;
+  rbuf[0] = blocktyp;
+  rbuf[1] = 0;
+  output_new_rsrc("POST", cur_post_id, 0, (char *)rbuf, rbufpos);
+  rbufpos = 2;
   cur_post_id++;
 }
 
@@ -340,12 +340,12 @@ t1mac_output_data(byte *s, int len)
   while (len > 0) {
     int n;
     /* In some Mac fonts, the ASCII sections terminate with a line-end */
-    if (bufpos >= MAX_RSRC_LEN
-	|| (blocktyp == POST_ASCII && len + bufpos > MAX_RSRC_LEN && bufpos))
+    if (rbufpos >= MAX_RSRC_LEN
+	|| (blocktyp == POST_ASCII && len + rbufpos > MAX_RSRC_LEN && rbufpos))
       output_current_post();
-    n = (len + bufpos <= MAX_RSRC_LEN ? len : MAX_RSRC_LEN - bufpos);
-    memcpy(buf + bufpos, s, n);
-    bufpos += n;
+    n = (len + rbufpos <= MAX_RSRC_LEN ? len : MAX_RSRC_LEN - rbufpos);
+    memcpy(rbuf + rbufpos, s, n);
+    rbufpos += n;
     s += n;
     len -= n;
   }
