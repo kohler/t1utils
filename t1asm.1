@@ -29,9 +29,8 @@ is not specified input comes from the standard input.
 
 .B t1asm
 tokenizes the charstring data and performs eexec and charstring encryption
-as specified in the
-.I "Adobe Type 1 Font Format,"
-the ``black book''.
+as specified in the ``black book,''
+.I "Adobe Type 1 Font Format."
 
 The input must have a line of the form
 .RS
@@ -50,10 +49,13 @@ After the start of the
 array in the input, all open braces `{' not in a comment begin a
 charstring. Such a charstring is terminated by the next non-comment close
 brace `}'. Within such a charstring, only comments, integers, and valid
-charstring commands are allowed. The format within a charstring is
-unimportant as long as integers and commands are separated by at least a
-one whitespace (space, tab, newling) character. Note that within
-charstrings, comments are discarded because they cannot be encoded.
+charstring commands are allowed. Valid charstring command names can be
+found in
+.I "Adobe Type 1 Font Format"
+and other documents describing the newer Type 2 opcodes. The format within
+a charstring is unimportant as long as integers and commands are separated
+by at least a one whitespace (space, tab, newline) character. Note that
+within charstrings, comments are discarded because they cannot be encoded.
 .SH OPTIONS
 .TP 5
 .BR \-\-pfa ", " \-a
@@ -82,10 +84,16 @@ allowable length.
 .BR t1unmac (1)
 .LP
 .I "Adobe Type 1 Font Format"
+is available free from Adobe as a PDF file:
+http://www.adobe.com/supportservice/devrelations/PDFS/TN/T1_SPEC.PDF
+.LP
+.I "The Type 2 Charstring Format,"
+also available from Adobe as a PDF file, describes the newer Type 2
+operators, which are also used in some multiple-master Type 1 fonts like
+Adobe Jenson and Kepler:
+http://www.adobe.com/supportservice/devrelations/PDFS/TN/5177.Type2.pdf
+'
 .SH AUTHORS
 Lee Hetherington (ilh@lcs.mit.edu)
 .br
 Eddie Kohler (eddietwo@lcs.mit.edu)
-.PP
-Ported to Microsoft C/C++ Compiler and MS-DOS operating system by
-Kai-Uwe Herbing (herbing@netmbx.netmbx.de).

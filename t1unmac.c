@@ -33,15 +33,20 @@
 
 /* Note: this is ANSI C. */
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
 #if defined(_MSDOS) || defined(_WIN32)
-  #include <fcntl.h>
-  #include <getopt.h>
-  #include <io.h>
+# include <fcntl.h>
+# include <getopt.h>
+# include <io.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <stdarg.h>
+#include <string.h>
+#include <errno.h>
 #include "clp.h"
 
 /* int32 must be at least 32-bit */
@@ -310,7 +315,7 @@ int main(int argc, char **argv)
 	ofp = stdout;
       else {
 	ofp = fopen(clp->arg, "w");
-	if (!ofp) fatal_error("can't open %s for writing", clp->arg);
+	if (!ofp) fatal_error("%s: %s", clp->arg, strerror(errno));
       }
       break;
 
@@ -345,7 +350,7 @@ particular purpose.\n");
 	ifp = stdin;
       else {
 	ifp = fopen(clp->arg, "rb");
-	if (!ifp) fatal_error("can't open %s for reading", clp->arg);
+	if (!ifp) fatal_error("%s: %s", clp->arg, strerror(errno));
       }
       break;
       

@@ -50,9 +50,12 @@
 
 /* Note: this is ANSI C. */
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
 #if defined(_MSDOS) || defined(_WIN32)
-  #include <fcntl.h>
-  #include <io.h>
+# include <fcntl.h>
+# include <io.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,6 +63,7 @@
 #include <ctype.h>
 #include <limits.h>
 #include <stdarg.h>
+#include <errno.h>
 #include "clp.h"
 
 /* int32 must be at least 32-bit and uint16 must be at least 16-bit */
@@ -82,7 +86,7 @@ typedef unsigned char byte;
 
 static FILE *ifp;
 static FILE *ofp;
-static char line[LINESIZE];
+static char line[LINESIZE + 1];	/* account for '\0' at end of line */
 static int start_charstring = 0;
 static int final_ascii = 0;
 static int lenIV = 4;
@@ -449,16 +453,16 @@ static void do_charstring()
 	val |= (cgetc() & 0xff) <<  8;
 	val |= (cgetc() & 0xff) <<  0;
 	/* in case an int32 is larger than four bytes---sign extend */
-	#if INT_MAX > 0x7FFFFFFFUL
-	  for (i = 4; i < sizeof(int32); i++)
-	    val |= 0xff << (i * 8);
-	#endif
+#if INT_MAX > 0x7FFFFFFFUL
+	if (val & 0x80000000)
+	  val |= ~0x7FFFFFFF;
+#endif
       }
       sprintf(buf, "%d", val);
       output_token(buf);
     } else {
       switch (b) {
-      case 0: output_token("error"); break;
+      case 0: output_token("error"); break;		/* special */
       case 1: output_token("hstem"); break;
       case 3: output_token("vstem"); break;
       case 4: output_token("vmoveto"); break;
@@ -466,68 +470,72 @@ static void do_charstring()
       case 6: output_token("hlineto"); break;
       case 7: output_token("vlineto"); break;
       case 8: output_token("rrcurveto"); break;
-      case 9: output_token("closepath"); break;
+      case 9: output_token("closepath"); break;		/* Type 1 ONLY */
       case 10: output_token("callsubr"); break;
       case 11: output_token("return"); break;
-      case 13: output_token("hsbw"); break;
+      case 13: output_token("hsbw"); break;		/* Type 1 ONLY */
       case 14: output_token("endchar"); break;
-      case 16: output_token("blend"); break;
-      case 18: output_token("hstemhm"); break;
-      case 19: output_token("hintmask"); break;
-      case 20: output_token("cntrmask"); break;
+      case 16: output_token("blend"); break;		/* Type 2 */
+      case 18: output_token("hstemhm"); break;		/* Type 2 */
+      case 19: output_token("hintmask"); break;		/* Type 2 */
+      case 20: output_token("cntrmask"); break;		/* Type 2 */
       case 21: output_token("rmoveto"); break;
       case 22: output_token("hmoveto"); break;
-      case 23: output_token("vstemhm"); break;
-      case 24: output_token("rcurveline"); break;
-      case 25: output_token("rlinecurve"); break;
-      case 26: output_token("vvcurveto"); break;
-      case 27: output_token("hhcurveto"); break;
-      case 28: {
+      case 23: output_token("vstemhm"); break;		/* Type 2 */
+      case 24: output_token("rcurveline"); break;	/* Type 2 */
+      case 25: output_token("rlinecurve"); break;	/* Type 2 */
+      case 26: output_token("vvcurveto"); break;	/* Type 2 */
+      case 27: output_token("hhcurveto"); break;	/* Type 2 */
+      case 28: {		/* Type 2 */
 	/* short integer */
 	cs_len -= 2;
 	val =  (cgetc() & 0xff) << 8;
 	val |= (cgetc() & 0xff);
-	if (val & (1L << 15))
-	  val |= ~0xFFFF;
+	if (val & 0x8000)
+	  val |= ~0x7FFF;
 	sprintf(buf, "%d", val);
 	output_token(buf);
       }
-      case 29: output_token("callgsubr"); break;
+      case 29: output_token("callgsubr"); break;	/* Type 2 */
       case 30: output_token("vhcurveto"); break;
       case 31: output_token("hvcurveto"); break;
       case 12:
 	--cs_len;
 	switch (b = cgetc()) {
-	case 0: output_token("dotsection"); break;
-	case 1: output_token("vstem3"); break;
-	case 2: output_token("hstem3"); break;
-	case 3: output_token("and"); break;
-	case 4: output_token("or"); break;
-	case 5: output_token("not"); break;
-	case 6: output_token("seac"); break;
-	case 7: output_token("sbw"); break;
-	case 8: output_token("store"); break;
-	case 9: output_token("abs"); break;
-	case 10: output_token("add"); break;
-	case 11: output_token("sub"); break;
+	case 0: output_token("dotsection"); break;	/* Type 1 ONLY */
+	case 1: output_token("vstem3"); break;		/* Type 1 ONLY */
+	case 2: output_token("hstem3"); break;		/* Type 1 ONLY */
+	case 3: output_token("and"); break;		/* Type 2 */
+	case 4: output_token("or"); break;		/* Type 2 */
+	case 5: output_token("not"); break;		/* Type 2 */
+	case 6: output_token("seac"); break;		/* Type 1 ONLY */
+	case 7: output_token("sbw"); break;		/* Type 1 ONLY */
+	case 8: output_token("store"); break;		/* Type 2 */
+	case 9: output_token("abs"); break;		/* Type 2 */
+	case 10: output_token("add"); break;		/* Type 2 */
+	case 11: output_token("sub"); break;		/* Type 2 */
 	case 12: output_token("div"); break;
-	case 13: output_token("load"); break;
-	case 14: output_token("neg"); break;
-	case 15: output_token("eq"); break;
-	case 16: output_token("callothersubr"); break;
-	case 17: output_token("pop"); break;
-	case 18: output_token("drop"); break;
-	case 20: output_token("put"); break;
-	case 21: output_token("get"); break;
-	case 22: output_token("ifelse"); break;
-	case 23: output_token("random"); break;
-	case 24: output_token("mul"); break;
-	case 26: output_token("sqrt"); break;
-	case 27: output_token("dup"); break;
-	case 28: output_token("exch"); break;
-	case 29: output_token("index"); break;
-	case 30: output_token("roll"); break;
-	case 33: output_token("setcurrentpoint"); break;
+	case 13: output_token("load"); break;		/* Type 2 */
+	case 14: output_token("neg"); break;		/* Type 2 */
+	case 15: output_token("eq"); break;		/* Type 2 */
+	case 16: output_token("callothersubr"); break;	/* Type 1 ONLY */
+	case 17: output_token("pop"); break;		/* Type 1 ONLY */
+	case 18: output_token("drop"); break;		/* Type 2 */
+	case 20: output_token("put"); break;		/* Type 2 */
+	case 21: output_token("get"); break;		/* Type 2 */
+	case 22: output_token("ifelse"); break;		/* Type 2 */
+	case 23: output_token("random"); break;		/* Type 2 */
+	case 24: output_token("mul"); break;		/* Type 2 */
+	case 26: output_token("sqrt"); break;		/* Type 2 */
+	case 27: output_token("dup"); break;		/* Type 2 */
+	case 28: output_token("exch"); break;		/* Type 2 */
+	case 29: output_token("index"); break;		/* Type 2 */
+	case 30: output_token("roll"); break;		/* Type 2 */
+	case 33: output_token("setcurrentpoint"); break;/* Type 1 ONLY */
+	case 34: output_token("hflex"); break;		/* Type 2 */
+	case 35: output_token("flex"); break;		/* Type 2 */
+	case 36: output_token("hflex1"); break;		/* Type 2 */
+	case 37: output_token("flex1"); break;		/* Type 2 */
 	default:
 	  sprintf(buf, "escape_%d", b);
 	  unknown++;
@@ -634,7 +642,7 @@ int main(int argc, char **argv)
 	ofp = stdout;
       else {
 	ofp = fopen(clp->arg, "w");
-	if (!ofp) fatal_error("can't open %s for writing", clp->arg);
+	if (!ofp) fatal_error("%s: %s", clp->arg, strerror(errno));
       }
       break;
       
@@ -661,7 +669,7 @@ particular purpose.\n");
 	ifp = stdin;
       else {
 	ifp = fopen(clp->arg, "r");
-	if (!ifp) fatal_error("can't open %s for reading", clp->arg);
+	if (!ifp) fatal_error("%s: %s", clp->arg, strerror(errno));
       }
       break;
       

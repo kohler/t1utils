@@ -47,9 +47,12 @@
 
 /* Note: this is ANSI C. */
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
 #if defined(_MSDOS) || defined(_WIN32)
-  #include <fcntl.h>
-  #include <io.h>
+# include <fcntl.h>
+# include <io.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -57,6 +60,7 @@
 #include <ctype.h>
 #include <limits.h>
 #include <stdarg.h>
+#include <errno.h>
 #include "clp.h"
 
 /* int32 must be at least 32-bit and uint16 must be at least 16-bit */
@@ -120,64 +124,68 @@ static struct command {
   char *name;
   int one, two;
 } command_table[] = {
-  { "abs", 12, 9 },
-  { "add", 12, 10 },
-  { "and", 12, 3 },
-  { "blend", 16, -1 },
-  { "callgsubr", 29, -1 },
-  { "callothersubr", 12, 16 },
+  { "abs", 12, 9 },		/* Type 2 */
+  { "add", 12, 10 },		/* Type 2 */
+  { "and", 12, 3 },		/* Type 2 */
+  { "blend", 16, -1 },		/* Type 2 */
+  { "callgsubr", 29, -1 },	/* Type 2 */
+  { "callothersubr", 12, 16 },	/* Type 1 ONLY */
   { "callsubr", 10, -1 },
-  { "closepath", 9, -1 },
-  { "cntrmask", 18, -1 },
+  { "closepath", 9, -1 },	/* Type 1 ONLY */
+  { "cntrmask", 20, -1 },	/* Type 2 */
   { "div", 12, 12 },
-  { "dotsection", 12, 0 },
-  { "drop", 12, 18 },
-  { "dup", 12, 27 },
+  { "dotsection", 12, 0 },	/* Type 1 ONLY */
+  { "drop", 12, 18 },		/* Type 2 */
+  { "dup", 12, 27 },		/* Type 2 */
   { "endchar", 14, -1 },
-  { "eq", 12, 15 },
-  { "error", 0, -1 },
-  { "escape", 12, -1 },
-  { "exch", 12, 28 },
-  { "get", 12, 21 },
-  { "hhcurveto", 27, -1 },
-  { "hintmask", 19, -1 },
+  { "eq", 12, 15 },		/* Type 2 */
+  { "error", 0, -1 },		/* special */
+  { "escape", 12, -1 },		/* special */
+  { "exch", 12, 28 },		/* Type 2 */
+  { "flex", 12, 35 },		/* Type 2 */
+  { "flex1", 12, 37 },		/* Type 2 */
+  { "get", 12, 21 },		/* Type 2 */
+  { "hflex", 12, 34 },		/* Type 2 */
+  { "hflex1", 12, 36 },		/* Type 2 */
+  { "hhcurveto", 27, -1 },	/* Type 2 */
+  { "hintmask", 19, -1 },	/* Type 2 */
   { "hlineto", 6, -1 },
   { "hmoveto", 22, -1 },
-  { "hsbw", 13, -1 },
+  { "hsbw", 13, -1 },		/* Type 1 ONLY */
   { "hstem", 1, -1 },
-  { "hstem3", 12, 2 },
-  { "hstemhm", 18, -1 },
+  { "hstem3", 12, 2 },		/* Type 1 ONLY */
+  { "hstemhm", 18, -1 },	/* Type 2 */
   { "hvcurveto", 31, -1 },
-  { "ifelse", 12, 22 },
-  { "index", 12, 29 },
-  { "load", 12, 13 },
-  { "mul", 12, 24 },
-  { "neg", 12, 14 },
-  { "not", 12, 5 },
-  { "or", 12, 4 },
-  { "pop", 12, 17 },
-  { "put", 12, 20 },
-  { "random", 12, 23 },
-  { "rcurveline", 24, -1 },
+  { "ifelse", 12, 22 },		/* Type 2 */
+  { "index", 12, 29 },		/* Type 2 */
+  { "load", 12, 13 },		/* Type 2 */
+  { "mul", 12, 24 },		/* Type 2 */
+  { "neg", 12, 14 },		/* Type 2 */
+  { "not", 12, 5 },		/* Type 2 */
+  { "or", 12, 4 },		/* Type 2 */
+  { "pop", 12, 17 },		/* Type 1 ONLY */
+  { "put", 12, 20 },		/* Type 2 */
+  { "random", 12, 23 },		/* Type 2 */
+  { "rcurveline", 24, -1 },	/* Type 2 */
   { "return", 11, -1 },
-  { "rlinecurve", 25, -1 },
+  { "rlinecurve", 25, -1 },	/* Type 2 */
   { "rlineto", 5, -1 },
   { "rmoveto", 21, -1 },
-  { "roll", 12, 30 },
+  { "roll", 12, 30 },		/* Type 2 */
   { "rrcurveto", 8, -1 },
-  { "sbw", 12, 7 },
-  { "seac", 12, 6 },
-  { "setcurrentpoint", 12, 33 },
-  { "sqrt", 12, 26 },
-  { "store", 12, 8 },
-  { "sub", 12, 11 },
+  { "sbw", 12, 7 },		/* Type 1 ONLY */
+  { "seac", 12, 6 },		/* Type 1 ONLY */
+  { "setcurrentpoint", 12, 33 }, /* Type 1 ONLY */
+  { "sqrt", 12, 26 },		/* Type 2 */
+  { "store", 12, 8 },		/* Type 2 */
+  { "sub", 12, 11 },		/* Type 2 */
   { "vhcurveto", 30, -1 },
   { "vlineto", 7, -1 },
   { "vmoveto", 4, -1 },
   { "vstem", 3, -1 },
-  { "vstem3", 12, 1 },
-  { "vstemhm", 23, -1 },
-  { "vvcurveto", 26, -1 },
+  { "vstem3", 12, 1 },		/* Type 1 ONLY */
+  { "vstemhm", 23, -1 },	/* Type 2 */
+  { "vvcurveto", 26, -1 },	/* Type 2 */
 };                                                /* alphabetical */
 
 void fatal_error(char *message, ...);
@@ -676,7 +684,7 @@ int main(int argc, char **argv)
 	ofp = stdout;
       else {
 	ofp = fopen(clp->arg, "w");
-	if (!ofp) fatal_error("can't open %s for writing", clp->arg);
+	if (!ofp) fatal_error("%s: %s", clp->arg, strerror(errno));
       }
       break;
 
@@ -711,7 +719,7 @@ particular purpose.\n");
 	ifp = stdin;
       else {
 	ifp = fopen(clp->arg, "r");
-	if (!ifp) fatal_error("can't open %s for reading", clp->arg);
+	if (!ifp) fatal_error("%s: %s", clp->arg, strerror(errno));
       }
       break;
       

@@ -1,5 +1,17 @@
 T1utils NEWS
 
+Version 1.8   2.Jan.1999
+
+* Added some more Type 2 commands (flex, flex1, hflex, hflex1) from a
+  revision of the Type 2 spec. (I wouldn't have known about this except for
+  CurveSoft's revised t1utils package, available at
+  http://www.curvesoft.com. These t1utils are more up-to-date than theirs,
+  however.)
+
+* t1asm: Fixed one Type 2 command's translation (cntrmask was incorrectly
+  mapped to 18, not 20).
+
+
 Version 1.7.2   11.Dec.1998
 
 * Integrated patches from Jan-Jaap van der Heijden
