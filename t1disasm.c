@@ -312,7 +312,7 @@ static int save_len = 0;
 static int save_cap = 0;
 
 static void
-append_save(unsigned char *line, int len)
+append_save(const unsigned char *line, int len)
 {
   if (save_len + len >= save_cap) {
     unsigned char *new_save;
@@ -332,11 +332,11 @@ append_save(unsigned char *line, int len)
 /* 23.Feb.2004 - use 'memstr', not strstr, because the strings input to
    eexec_line aren't null terminated! Reported by Werner Lemberg. */
 
-static const char *
-oog_memstr(const char *line, int line_len, const char *pattern, int pattern_len)
+static const unsigned char *
+oog_memstr(const unsigned char *line, int line_len, const char *pattern, int pattern_len)
 {
-    const char *try;
-    const char *last = line + line_len - pattern_len + 1;
+    const unsigned char *try;
+    const unsigned char *last = line + line_len - pattern_len + 1;
     while (line < last
 	   && (try = memchr(line, (unsigned char)*pattern, last - line))) {
 	if (memcmp(try, pattern, pattern_len) == 0)
@@ -432,7 +432,8 @@ eexec_line(unsigned char *line, int line_len)
        badly: a charstring definition follows "/Charstrings ... begin", ON THE
        SAME LINE. */
     {
-	const char *CharStrings = oog_memstr(line, line_len, "/CharStrings ", 13);
+	const char *CharStrings = (const char *)
+	    oog_memstr(line, line_len, "/CharStrings ", 13);
 	int crap, n;
 	char should_be_slash = 0;
 	if (CharStrings
@@ -478,8 +479,10 @@ disasm_output_ascii(char *line, int len)
     in_eexec = 0;
 
     /* if we came from a binary section, we need to process that too */
-    if (was_in_eexec > 0) 
-	eexec_line("", 0);
+    if (was_in_eexec > 0) {
+	unsigned char zero = 0;
+	eexec_line(&zero, 0);
+    }
 
     /* if we just came from the "ASCII part" of an eexec section, we need to
        process the saved lines */
