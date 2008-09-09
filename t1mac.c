@@ -748,8 +748,8 @@ static Clp_Option options[] = {
   { "binhex", 0, BINHEX_OPT, 0, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "macbinary", 0, MACBINARY_OPT, 0, 0 },
-  { "filename", 'n', FILENAME_OPT, Clp_ArgString, 0 },
-  { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+  { "filename", 'n', FILENAME_OPT, Clp_ValString, 0 },
+  { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
   { "raw", 'r', RAW_OPT, 0, 0 },
   { "version", 0, VERSION_OPT, 0, 0 },
 };
@@ -868,10 +868,10 @@ main(int argc, char *argv[])
      case OUTPUT_OPT:
       if (ofp)
 	fatal_error("output file already specified");
-      if (strcmp(clp->arg, "-") == 0)
+      if (strcmp(clp->vstr, "-") == 0)
 	ofp = stdout;
       else {
-	ofp_filename = clp->arg;
+	ofp_filename = clp->vstr;
 	ofp = fopen(ofp_filename, "wb");
 	if (!ofp) fatal_error("%s: %s", ofp_filename, strerror(errno));
       }
@@ -880,7 +880,7 @@ main(int argc, char *argv[])
      case FILENAME_OPT:
       if (set_font_name)
 	fatal_error("Macintosh font filename already specified");
-      set_font_name = clp->arg;
+      set_font_name = clp->vstr;
       break;
       
      case HELP_OPT:
@@ -902,12 +902,12 @@ particular purpose.\n");
 	fatal_error("too many arguments");
       else if (ifp)
 	goto output_file;
-      if (strcmp(clp->arg, "-") == 0)
+      if (strcmp(clp->vstr, "-") == 0)
 	ifp = stdin;
       else {
-	ifp_filename = clp->arg;
-	ifp = fopen(clp->arg, "r");
-	if (!ifp) fatal_error("%s: %s", clp->arg, strerror(errno));
+	ifp_filename = clp->vstr;
+	ifp = fopen(clp->vstr, "r");
+	if (!ifp) fatal_error("%s: %s", clp->vstr, strerror(errno));
       }
       break;
       

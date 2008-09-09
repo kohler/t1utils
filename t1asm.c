@@ -541,10 +541,10 @@ static void parse_charstring()
 #define PFA_OPT		305
 
 static Clp_Option options[] = {
-  { "block-length", 'l', BLOCK_LEN_OPT, Clp_ArgInt, 0 },
+  { "block-length", 'l', BLOCK_LEN_OPT, Clp_ValInt, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
-  { "line-length", 0, BLOCK_LEN_OPT, Clp_ArgInt, 0 },
-  { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+  { "line-length", 0, BLOCK_LEN_OPT, Clp_ValInt, 0 },
+  { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
   { "pfa", 'a', PFA_OPT, 0, 0 },
   { "pfb", 'b', PFB_OPT, 0, 0 },
   { "version", 0, VERSION_OPT, 0, 0 },
@@ -629,10 +629,10 @@ int main(int argc, char *argv[])
      case OUTPUT_OPT:
       if (ofp)
 	fatal_error("output file already specified");
-      if (strcmp(clp->arg, "-") == 0)
+      if (strcmp(clp->vstr, "-") == 0)
 	ofp = stdout;
-      else if (!(ofp = fopen(clp->arg, "w")))
-	fatal_error("%s: %s", clp->arg, strerror(errno));
+      else if (!(ofp = fopen(clp->vstr, "w")))
+	fatal_error("%s: %s", clp->vstr, strerror(errno));
       break;
       
      case PFB_OPT:
@@ -662,10 +662,10 @@ particular purpose.\n");
 	fatal_error("too many arguments");
       else if (ifp)
 	goto output_file;
-      if (strcmp(clp->arg, "-") == 0)
+      if (strcmp(clp->vstr, "-") == 0)
 	ifp = stdin;
-      else if (!(ifp = fopen(clp->arg, "r")))
-	fatal_error("%s: %s", clp->arg, strerror(errno));
+      else if (!(ifp = fopen(clp->vstr, "r")))
+	fatal_error("%s: %s", clp->vstr, strerror(errno));
       break;
       
      case Clp_Done:

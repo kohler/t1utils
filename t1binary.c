@@ -101,10 +101,10 @@ pfb_output_end()
 #define HELP_OPT	303
 
 static Clp_Option options[] = {
-  { "block-length", 'l', BLOCK_LEN_OPT, Clp_ArgInt, 0 },
+  { "block-length", 'l', BLOCK_LEN_OPT, Clp_ValInt, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
-  { "length", 0, BLOCK_LEN_OPT, Clp_ArgInt, 0 },
-  { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+  { "length", 0, BLOCK_LEN_OPT, Clp_ValInt, 0 },
+  { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
   { "version", 0, VERSION_OPT, 0, 0 },
 };
 static const char *program_name;
@@ -195,11 +195,11 @@ main(int argc, char *argv[])
      case OUTPUT_OPT:
       if (ofp)
 	fatal_error("output file already specified");
-      if (strcmp(clp->arg, "-") == 0)
+      if (strcmp(clp->vstr, "-") == 0)
 	ofp = stdout;
       else {
-	ofp = fopen(clp->arg, "wb");
-	if (!ofp) fatal_error("%s: %s", clp->arg, strerror(errno));
+	ofp = fopen(clp->vstr, "wb");
+	if (!ofp) fatal_error("%s: %s", clp->vstr, strerror(errno));
       }
       break;
       
@@ -222,12 +222,12 @@ particular purpose.\n");
 	fatal_error("too many arguments");
       else if (ifp)
 	goto output_file;
-      if (strcmp(clp->arg, "-") == 0)
+      if (strcmp(clp->vstr, "-") == 0)
 	ifp = stdin;
       else {
-	ifp_filename = clp->arg;
-	ifp = fopen(clp->arg, "r");
-	if (!ifp) fatal_error("%s: %s", clp->arg, strerror(errno));
+	ifp_filename = clp->vstr;
+	ifp = fopen(clp->vstr, "r");
+	if (!ifp) fatal_error("%s: %s", clp->vstr, strerror(errno));
       }
       break;
       

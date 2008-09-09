@@ -226,11 +226,11 @@ static Clp_Option options[] = {
   { "applesingle", 0, APPLEDOUBLE_OPT, 0, 0 },
   { "appledouble", 0, APPLEDOUBLE_OPT, 0, 0 },
   { "binhex", 0, BINHEX_OPT, 0, 0 },
-  { "block-length", 0, LINE_LEN_OPT, Clp_ArgUnsigned, 0 },
+  { "block-length", 0, LINE_LEN_OPT, Clp_ValUnsigned, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
-  { "line-length", 'l', LINE_LEN_OPT, Clp_ArgUnsigned, 0 },
+  { "line-length", 'l', LINE_LEN_OPT, Clp_ValUnsigned, 0 },
   { "macbinary", 0, MACBINARY_OPT, 0, 0 },
-  { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+  { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
   { "pfa", 'a', PFA_OPT, 0, 0 },
   { "pfb", 'b', PFB_OPT, 0, 0 },
   { "raw", 'r', RAW_OPT, 0, 0 },
@@ -584,11 +584,11 @@ main(int argc, char *argv[])
      case OUTPUT_OPT:
       if (ofp)
 	fatal_error("output file already specified");
-      if (strcmp(clp->arg, "-") == 0)
+      if (strcmp(clp->vstr, "-") == 0)
 	ofp = stdout;
       else {
-	ofp = fopen(clp->arg, "w");
-	if (!ofp) fatal_error("%s: %s", clp->arg, strerror(errno));
+	ofp = fopen(clp->vstr, "w");
+	if (!ofp) fatal_error("%s: %s", clp->vstr, strerror(errno));
       }
       break;
       
@@ -623,12 +623,12 @@ particular purpose.\n");
 	fatal_error("too many arguments");
       else if (ifp)
 	goto output_file;
-      if (strcmp(clp->arg, "-") == 0)
+      if (strcmp(clp->vstr, "-") == 0)
 	ifp = stdin;
       else {
-	ifp_name = clp->arg;
-	ifp = fopen(clp->arg, "rb");
-	if (!ifp) fatal_error("%s: %s", clp->arg, strerror(errno));
+	ifp_name = clp->vstr;
+	ifp = fopen(clp->vstr, "rb");
+	if (!ifp) fatal_error("%s: %s", clp->vstr, strerror(errno));
       }
       break;
       

@@ -70,8 +70,8 @@ static int line_length = 64;
 
 static Clp_Option options[] = {
   { "help", 0, HELP_OPT, 0, 0 },
-  { "line-length", 'l', LINE_LEN_OPT, Clp_ArgInt, 0 },
-  { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+  { "line-length", 'l', LINE_LEN_OPT, Clp_ValInt, 0 },
+  { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
   { "version", 0, VERSION_OPT, 0, 0 },
   { "warnings", 'w', WARNINGS_OPT, 0, Clp_Negate }
 };
@@ -216,11 +216,11 @@ main(int argc, char *argv[])
      case OUTPUT_OPT:
       if (ofp)
 	fatal_error("output file already specified");
-      if (strcmp(clp->arg, "-") == 0)
+      if (strcmp(clp->vstr, "-") == 0)
 	ofp = stdout;
       else {
-	ofp = fopen(clp->arg, "w");
-	if (!ofp) fatal_error("%s: %s", clp->arg, strerror(errno));
+	ofp = fopen(clp->vstr, "w");
+	if (!ofp) fatal_error("%s: %s", clp->vstr, strerror(errno));
       }
       break;
 
@@ -247,14 +247,14 @@ particular purpose.\n");
 	fatal_error("too many arguments");
       else if (ifp)
 	goto output_file;
-      if (strcmp(clp->arg, "-") == 0) {
+      if (strcmp(clp->vstr, "-") == 0) {
 	ifp_filename = "<stdin>";
 	ifp = stdin;
       } else {
-	ifp_filename = clp->arg;
-	ifp = fopen(clp->arg, "rb");
+	ifp_filename = clp->vstr;
+	ifp = fopen(clp->vstr, "rb");
 	if (!ifp)
-	    fatal_error("%s: %s", clp->arg, strerror(errno));
+	    fatal_error("%s: %s", clp->vstr, strerror(errno));
       }
       break;
       
