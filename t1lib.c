@@ -87,19 +87,19 @@ process_pfa(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
     /* Loop until no more input. We need to look for `currentfile eexec' to
        start eexec section (hex to binary conversion) and line of all zeros to
        switch back to ASCII. */
-  
+
     /* Don't use fgets() in case line-endings are indicated by bare \r's, as
        occurs in Macintosh fonts. */
 
     /* 2.Aug.1999 - At the behest of Tom Kacvinsky <tjk@ams.org>, support
        binary PFA fonts. */
-  
+
     char buffer[LINESIZE];
     int c = 0;
     int blocktyp = PFA_ASCII;
     char saved_orphan = 0;
     (void)ifp_filename;
-  
+
     while (c != EOF) {
 	char *line = buffer, *last = buffer;
 	int crlf = 0;
@@ -125,9 +125,9 @@ process_pfa(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
 	    *last++ = '\n';
 	} else if (c != EOF)
 	    *last++ = c;
-    
+
 	*last = 0;
-    
+
 	/* now that we have the line, handle it */
 	if (blocktyp == PFA_ASCII) {
 	    if (strncmp(line, "currentfile eexec", 17) == 0 && isspace(line[17])) {
@@ -171,7 +171,7 @@ process_pfa(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
 		    *last++ = '\n';
 	    }
 	}
-    
+
 	/* blocktyp == PFA_HEX || blocktyp == PFA_BINARY */
 	if (all_zeroes(line)) {	/* XXX not safe */
 	    fr->output_ascii(line, last - line);
@@ -183,7 +183,7 @@ process_pfa(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
 	} else
 	    fr->output_binary((unsigned char *)line, last - line);
     }
-  
+
     fr->output_end();
 }
 
@@ -197,13 +197,13 @@ handle_pfb_ascii(struct font_reader *fr, char *line, int len)
 {
   /* Divide PFB_ASCII blocks into lines */
   int start = 0;
-  
+
   while (1) {
     int pos = start;
-    
+
     while (pos < len && line[pos] != '\n' && line[pos] != '\r')
       pos++;
-    
+
     if (pos >= len) {
       if (pos == start)
 	return 0;
@@ -215,13 +215,13 @@ handle_pfb_ascii(struct font_reader *fr, char *line, int len)
 	memmove(line, line + start, pos - start);
 	return pos - start;
       }
-      
+
     } else if (pos < len - 1 && line[pos] == '\r' && line[pos+1] == '\n') {
       line[pos] = '\n';
       line[pos+1] = 0;
       fr->output_ascii(line + start, pos + 1 - start);
       start = pos + 2;
-      
+
     } else {
       char save = line[pos+1];
       line[pos] = '\n';
@@ -243,7 +243,7 @@ process_pfb(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
   int filepos = 0;
   int linepos = 0;
   char line[LINESIZE];
-  
+
   while (1) {
     while (block_len == 0) {
       c = getc(ifp);
@@ -260,7 +260,7 @@ process_pfb(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
       }
       if (blocktyp == PFB_DONE)
 	goto done;
-      
+
       block_len = getc(ifp) & 0xFF;
       block_len |= (getc(ifp) & 0xFF) << 8;
       block_len |= (getc(ifp) & 0xFF) << 16;
@@ -284,16 +284,16 @@ process_pfb(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
 	      ifp_filename, block_len - actual, filepos);
 	block_len = actual;
       }
-      
+
       if (blocktyp == PFB_BINARY)
 	fr->output_binary((unsigned char *)line, actual);
       else
 	linepos = handle_pfb_ascii(fr, line, linepos + actual);
-      
+
       block_len -= actual;
       filepos += actual;
     }
-    
+
     /* handle any leftover line */
     if (linepos > 0) {
       line[linepos] = 0;
@@ -301,7 +301,7 @@ process_pfb(FILE *ifp, const char *ifp_filename, struct font_reader *fr)
       linepos = 0;
     }
   }
-  
+
  done:
   c = getc(ifp);
   if (c != EOF)
@@ -333,7 +333,7 @@ pfb_writer_output_block(struct pfb_writer *w)
   /* do nothing if nothing in block */
   if (w->pos == 0)
     return;
-  
+
   /* output four-byte block length */
   putc(PFB_MARKER, w->f);
   putc(w->blocktyp, w->f);
@@ -341,10 +341,10 @@ pfb_writer_output_block(struct pfb_writer *w)
   putc((int)((w->pos >> 8) & 0xff), w->f);
   putc((int)((w->pos >> 16) & 0xff), w->f);
   putc((int)((w->pos >> 24) & 0xff), w->f);
-  
+
   /* output block data */
   fwrite(w->buf, 1, w->pos, w->f);
-  
+
   /* mark block buffer empty and uninitialized */
   w->pos =  0;
   if (w->blocktyp == PFB_BINARY)
@@ -371,7 +371,7 @@ pfb_writer_grow_buf(struct pfb_writer *w)
       w->buf = new_buf;
       w->len = new_len;
     }
-    
+
   } else
     /* buf already the right size, just output the block */
     pfb_writer_output_block(w);

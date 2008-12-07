@@ -307,7 +307,7 @@ output_new_rsrc(const char *rtype, int rid, int attrs,
     r->data_offset = rsrc[nrsrc-2].data_offset + rsrc[nrsrc-2].data_len + 4;
   r->data_len = len;
   r->next_in_type = r->next_type = -2;
-  
+
   /* resource consists of length, then data */
   write_four(r->data_len, rfork_f);
   fwrite(data, 1, len, rfork_f);
@@ -577,7 +577,7 @@ output_applesingle(FILE *rf, int32_t rf_len, const char *filename, FILE *f,
   write_four(offset, f);
   write_four(APPLESINGLE_DATES_LEN, f);
   offset += APPLESINGLE_DATES_LEN;
-  
+
   /* finder info entry */
   write_four(APPLESINGLE_FINDERINFO_ENTRY, f);
   write_four(offset, f);
@@ -829,11 +829,11 @@ main(int argc, char *argv[])
   struct font_reader fr;
   uint32_t rfork_len;
   int raw = 0, macbinary = 1, applesingle = 0, appledouble = 0, binhex = 0;
-  
+
   Clp_Parser *clp =
     Clp_NewParser(argc, (const char * const *)argv, sizeof(options) / sizeof(options[0]), options);
   program_name = Clp_ProgramName(clp);
-  
+
   /* interpret command line arguments using CLP */
   while (1) {
     int opt = Clp_Next(clp);
@@ -843,27 +843,27 @@ main(int argc, char *argv[])
       raw = 1;
       macbinary = applesingle = appledouble = binhex = 0;
       break;
-      
+
      case MACBINARY_OPT:
       macbinary = 1;
       raw = applesingle = appledouble = binhex = 0;
       break;
-      
+
      case APPLESINGLE_OPT:
       applesingle = 1;
       raw = macbinary = appledouble = binhex = 0;
       break;
-      
+
      case APPLEDOUBLE_OPT:
       appledouble = 1;
       raw = macbinary = applesingle = binhex = 0;
       break;
-      
+
      case BINHEX_OPT:
       binhex = 1;
       raw = macbinary = applesingle = appledouble = 0;
       break;
-      
+
      output_file:
      case OUTPUT_OPT:
       if (ofp)
@@ -882,12 +882,12 @@ main(int argc, char *argv[])
 	fatal_error("Macintosh font filename already specified");
       set_font_name = clp->vstr;
       break;
-      
+
      case HELP_OPT:
       usage();
       exit(0);
       break;
-      
+
      case VERSION_OPT:
       printf("t1mac (LCDF t1utils) %s\n", VERSION);
       printf("Copyright (C) 2000-2003 Eddie Kohler et al.\n\
@@ -896,7 +896,7 @@ There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
       exit(0);
       break;
-      
+
      case Clp_NotOption:
       if (ifp && ofp)
 	fatal_error("too many arguments");
@@ -910,28 +910,28 @@ particular purpose.\n");
 	if (!ifp) fatal_error("%s: %s", clp->vstr, strerror(errno));
       }
       break;
-      
+
      case Clp_Done:
       goto done;
-      
+
      case Clp_BadOption:
       short_usage();
       exit(1);
       break;
-      
+
     }
   }
-  
+
  done:
   if (!ifp) ifp = stdin;
   if (!ofp) ofp = stdout;
-  
+
 #if defined(_MSDOS) || defined(_WIN32)
   /* As we are processing a PFB (binary) output */
   /* file, we must set its file mode to binary. */
   _setmode(_fileno(ofp), _O_BINARY);
 #endif
-  
+
   /* prepare font reader */
   fr.output_ascii = t1mac_output_ascii;
   fr.output_binary = t1mac_output_binary;
@@ -948,7 +948,7 @@ particular purpose.\n");
   /* peek at first byte to see if it is the PFB marker 0x80 */
   c = getc(ifp);
   ungetc(c, ifp);
-  
+
   /* do the file */
   if (c == PFB_MARKER)
     process_pfb(ifp, ifp_filename, &fr);
@@ -999,7 +999,7 @@ particular purpose.\n");
     set_font_name = font_name;
   } else if (!set_font_name)
     set_font_name = "Unknown Font";
-  
+
   /* now, output the file */
   if (macbinary)
     output_macbinary(rfork_f, rfork_len, set_font_name, ofp);

@@ -23,11 +23,11 @@
  * Revision 1.4  92/07/10  10:53:09  ilh
  * Added support for additional PostScript after the closefile command
  * (ie., some fonts have {restore}if after the cleartomark).
- * 
+ *
  * Revision 1.3  92/06/23  10:58:25  ilh
  * MSDOS porting by Kai-Uwe Herbing (herbing@netmbx.netmbx.de)
  * incoporated.
- * 
+ *
  * Revision 1.2  92/05/22  11:54:45  ilh
  * Fixed bug where integers larger than 32000 could not be encoded in
  * charstrings.  Now integer range is correct for four-byte
@@ -183,7 +183,7 @@ static byte eencrypt(byte plain)
 static byte cencrypt(byte plain)
 {
   byte cipher;
-  
+
   /* Thanks to Tom Kacvinsky <tjk@ams.org> who reported that lenIV == -1 means
      unencrypted charstrings. */
   if (lenIV < 0) return plain;
@@ -201,7 +201,7 @@ static void output_byte(byte b)
 {
   static const char *hexchar = "0123456789abcdef";
   static int hexcol = 0;
-  
+
   if (pfb) {
     /* PFB */
     PFB_OUTPUT_BYTE(&w, b);
@@ -252,7 +252,7 @@ static void eexec_start(char *string)
     pfb_writer_output_block(&w);
     w.blocktyp = PFB_BINARY;
   }
-  
+
   in_eexec = 1;
   er = 55665;
   eexec_byte(0);
@@ -286,10 +286,10 @@ static void getline()
   char *p = line;
   int comment = 0;
   start_charstring = 0;
-  
+
   while (p < line + LINESIZE) {
     c = getc(ifp);
-    
+
     if (c == EOF)
       break;
     else if (c == '%')
@@ -302,9 +302,9 @@ static void getline()
       } else
 	active = 0;
     }
-    
+
     *p++ = (char) c;
-    
+
     /* end of line processing: change CR or CRLF into LF, and exit */
     if (c == '\r') {
       c = getc(ifp);
@@ -315,7 +315,7 @@ static void getline()
     } else if (c == '\n')
       break;
   }
-  
+
   *p = '\0';
 }
 
@@ -326,16 +326,16 @@ static void getline()
 static void eexec_end(void)
 {
   int i, j;
-  
+
   if (!pfb)
     putc('\n', ofp);
   else if (w.blocktyp != PFB_ASCII) {
     pfb_writer_output_block(&w);
     w.blocktyp = PFB_ASCII;
   }
-  
+
   in_eexec = active = 0;
-  
+
   for (i = 0; i < 8; i++) {
     for (j = 0; j < 64; j++)
       eexec_byte('0');
@@ -438,16 +438,16 @@ static void get_charstring_token()
   int c = getc(ifp);
   while (isspace(c))
     c = getc(ifp);
-  
+
   if (c == '%') {
     while (c != EOF && c != '\r' && c != '\n')
       c = getc(ifp);
     get_charstring_token();
-    
+
   } else if (c == '}') {
     line[0] = '}';
     line[1] = 0;
-    
+
   } else {
     char *p = line;
     while (p < line + LINESIZE) {
@@ -481,13 +481,13 @@ static void parse_charstring()
       int one;
       int two;
       int ok = 0;
-      
+
       cp = (struct command *)
 	bsearch((void *) line, (void *) command_table,
 		sizeof(command_table) / sizeof(struct command),
 		sizeof(struct command),
 		command_compare);
-      
+
       if (cp) {
 	one = cp->one;
 	two = cp->two;
@@ -503,7 +503,7 @@ static void parse_charstring()
       } else if (strncmp(line, "UNKNOWN_", 8) == 0) {
 	/* Allow unanticipated UNKNOWN commands. */
 	one = 12;
-	if (sscanf(line + 8, "12_%d", &two) == 1) 
+	if (sscanf(line + 8, "12_%d", &two) == 1)
 	  ok = 1;
 	else if (sscanf(line + 8, "%d", &one) == 1) {
 	  two = -1;
@@ -611,20 +611,20 @@ Report bugs to <ekohler@gmail.com>.\n", program_name);
 int main(int argc, char *argv[])
 {
   char *p, *q, *r;
-  
+
   Clp_Parser *clp =
     Clp_NewParser(argc, (const char * const *)argv, sizeof(options) / sizeof(options[0]), options);
   program_name = Clp_ProgramName(clp);
-  
+
   /* interpret command line arguments using CLP */
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
-      
+
      case BLOCK_LEN_OPT:
       blocklen = clp->val.i;
       break;
-      
+
      output_file:
      case OUTPUT_OPT:
       if (ofp)
@@ -634,20 +634,20 @@ int main(int argc, char *argv[])
       else if (!(ofp = fopen(clp->vstr, "w")))
 	fatal_error("%s: %s", clp->vstr, strerror(errno));
       break;
-      
+
      case PFB_OPT:
       pfb = 1;
       break;
-      
+
      case PFA_OPT:
       pfb = 0;
       break;
-      
+
      case HELP_OPT:
       usage();
       exit(0);
       break;
-      
+
      case VERSION_OPT:
       printf("t1asm (LCDF t1utils) %s\n", VERSION);
       printf("Copyright (C) 1992-2003 I. Lee Hetherington, Eddie Kohler et al.\n\
@@ -656,7 +656,7 @@ There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
       exit(0);
       break;
-      
+
      case Clp_NotOption:
       if (ifp && ofp)
 	fatal_error("too many arguments");
@@ -667,18 +667,18 @@ particular purpose.\n");
       else if (!(ifp = fopen(clp->vstr, "r")))
 	fatal_error("%s: %s", clp->vstr, strerror(errno));
       break;
-      
+
      case Clp_Done:
       goto done;
-      
+
      case Clp_BadOption:
       short_usage();
       exit(1);
       break;
-      
+
     }
   }
-  
+
  done:
   if (!pfb) {
     if (blocklen == -1)
@@ -691,38 +691,38 @@ particular purpose.\n");
       error("warning: line length lowered to %d", blocklen);
     }
   }
-  
+
   if (!ifp) ifp = stdin;
   if (!ofp) ofp = stdout;
 
   if (pfb)
     init_pfb_writer(&w, blocklen, ofp);
-  
+
 #if defined(_MSDOS) || defined(_WIN32)
   /* If we are processing a PFB (binary) output */
   /* file, we must set its file mode to binary. */
   if (pfb)
     _setmode(_fileno(ofp), _O_BINARY);
 #endif
-  
+
   /* Finally, we loop until no more input. Some special things to look for are
      the `currentfile eexec' line, the beginning of the `/Subrs' or
      `/CharStrings' definition, the definition of `/lenIV', and the definition
      of the charstring start command which has `...string currentfile...' in
      it.
-     
+
      Being careful: Check with `/Subrs' and `/CharStrings' to see that a
      number follows the token -- otherwise, the token is probably nested in a
      subroutine a la Adobe Jenson, and we shouldn't pay attention to it.
-     
+
      Bugs: Occurrence of `/Subrs 9' in a comment will fool t1asm.
-     
+
      Thanks to Tom Kacvinsky <tjk@ams.org> who reported that some fonts come
      without /Subrs sections and provided a patch. */
-  
+
   while (!feof(ifp) && !ferror(ifp)) {
     getline();
-    
+
     if (!ever_active) {
       if (strncmp(line, "currentfile eexec", 17) == 0 && isspace(line[17])) {
 	/* Allow arbitrary whitespace after "currentfile eexec".
@@ -775,9 +775,9 @@ particular purpose.\n");
       eexec_string(line);
       break;
     }
-    
+
     eexec_string(line);
-    
+
     /* output line data */
     if (start_charstring) {
       if (!cs_start[0])
@@ -785,17 +785,17 @@ particular purpose.\n");
       parse_charstring();
     }
   }
-  
+
   /* Handle remaining PostScript after the eexec section */
   if (in_eexec)
     eexec_end();
-  
+
   /* There may be additional code. */
   while (!feof(ifp) && !ferror(ifp)) {
     getline();
     eexec_string(line);
   }
-  
+
   if (pfb)
     pfb_writer_end(&w);
 

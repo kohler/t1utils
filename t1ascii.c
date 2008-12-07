@@ -19,7 +19,7 @@
  * Revision 1.2  92/06/23  10:58:43  ilh
  * MSDOS porting by Kai-Uwe Herbing (herbing@netmbx.netmbx.de)
  * incoporated.
- * 
+ *
  * Revision 1.1  92/05/22  11:47:24  ilh
  * initial version
  *
@@ -191,16 +191,16 @@ main(int argc, char *argv[])
   struct font_reader fr;
   int c;
   FILE *ifp = 0;
-  
+
   Clp_Parser *clp =
     Clp_NewParser(argc, (const char * const *)argv, sizeof(options) / sizeof(options[0]), options);
   program_name = Clp_ProgramName(clp);
-  
+
   /* interpret command line arguments using CLP */
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
-      
+
      case LINE_LEN_OPT:
       line_length = clp->val.i;
       if (line_length < 8) {
@@ -211,7 +211,7 @@ main(int argc, char *argv[])
 	error("warning: line length lowered to %d", line_length);
       }
       break;
-      
+
      output_file:
      case OUTPUT_OPT:
       if (ofp)
@@ -227,7 +227,7 @@ main(int argc, char *argv[])
      case WARNINGS_OPT:
        line_length_warning = (clp->negated ? -1 : 0);
        break;
-      
+
      case HELP_OPT:
       usage();
       exit(0);
@@ -241,7 +241,7 @@ There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
       exit(0);
       break;
-      
+
      case Clp_NotOption:
       if (ifp && ofp)
 	fatal_error("too many arguments");
@@ -257,18 +257,18 @@ particular purpose.\n");
 	    fatal_error("%s: %s", clp->vstr, strerror(errno));
       }
       break;
-      
+
      case Clp_Done:
       goto done;
-      
+
      case Clp_BadOption:
       short_usage();
       exit(1);
       break;
-      
+
     }
   }
-  
+
  done:
   if (!ifp)
       ifp = stdin;
@@ -276,22 +276,22 @@ particular purpose.\n");
       ofp = stdout;
   if (line_length > 255 && line_length_warning == 0)
       fprintf(stderr, "%s: warning: selected --line-length is greater than 255\n", program_name);
-  
+
 #if defined(_MSDOS) || defined(_WIN32)
   /* As we are processing a PFB (binary) input */
   /* file, we must set its file mode to binary. */
   _setmode(_fileno(ifp), _O_BINARY);
 #endif
-  
+
   /* prepare font reader */
   fr.output_ascii = pfa_output_ascii;
   fr.output_binary = pfa_output_binary;
   fr.output_end = pfa_output_end;
-  
+
   /* peek at first byte to see if it is the PFB marker 0x80 */
   c = getc(ifp);
   ungetc(c, ifp);
-  
+
   /* do the file */
   if (c == PFB_MARKER)
     process_pfb(ifp, ifp_filename, &fr);
@@ -299,7 +299,7 @@ particular purpose.\n");
     process_pfa(ifp, ifp_filename, &fr);
   else
     fatal_error("%s does not start with font marker (`%%' or 0x80)", ifp_filename);
-  
+
   fclose(ifp);
   fclose(ofp);
   return 0;

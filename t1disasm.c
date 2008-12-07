@@ -19,17 +19,17 @@
  * Eddie Kohler <ekohler@gmail.com>.
  *
  * New change log in `NEWS'. Old change log:
- * 
+ *
  * Revision 1.4  92/07/10  10:55:08  ilh
  * Added support for additional PostScript after the closefile command
  * (ie., some fonts have {restore}if' after the cleartomark).  Also,
  * removed hardwired charstring start command (-| or RD) in favor of
  * automatically determining it.
- * 
+ *
  * Revision 1.3  92/06/23  10:57:53  ilh
  * MSDOS porting by Kai-Uwe Herbing (herbing@netmbx.netmbx.de)
  * incoporated.
- * 
+ *
  * Revision 1.2  92/05/22  12:05:33  ilh
  * Fixed bug where we were counting on sprintf to return its first
  * argument---not true in ANSI C.  This bug was detected by Piet
@@ -179,7 +179,7 @@ decrypt_charstring(unsigned char *line, int len)
   /* handle each charstring command */
   for (i = 0; i < len; i++) {
     byte b = line[i];
-    
+
     if (b >= 32) {
       if (b >= 32 && b <= 246)
 	val = b - 139;
@@ -203,7 +203,7 @@ decrypt_charstring(unsigned char *line, int len)
       }
       sprintf(buf, "%d", val);
       output_token(buf);
-      
+
     } else {
       switch (b) {
       case 0: output_token("error"); break;		/* special */
@@ -357,19 +357,19 @@ eexec_line(unsigned char *line, int line_len)
     int first_space;
     int digits;
     int cut_newline = 0;
-  
+
     /* append this data to the end of `save' if necessary */
     if (save_len) {
 	append_save(line, line_len);
 	line = save;
 	line_len = save_len;
     }
-  
+
     if (!line_len)
 	return 0;
-  
+
     /* Look for charstring start */
-  
+
     /* skip first word */
     for (pos = 0; pos < line_len && isspace(line[pos]); pos++)
 	;
@@ -377,7 +377,7 @@ eexec_line(unsigned char *line, int line_len)
 	pos++;
     if (pos >= line_len)
 	goto not_charstring;
-  
+
     /* skip spaces */
     first_space = pos;
     while (pos < line_len && isspace(line[pos]))
@@ -389,7 +389,7 @@ eexec_line(unsigned char *line, int line_len)
     digits = pos;
     while (pos < line_len && isdigit(line[pos]))
 	pos++;
-  
+
     /* check for subr (another number) */
     if (pos < line_len - 1 && isspace(line[pos]) && isdigit(line[pos+1])) {
 	first_space = pos;
@@ -397,7 +397,7 @@ eexec_line(unsigned char *line, int line_len)
 	for (pos = digits; pos < line_len && isdigit(line[pos]); pos++)
 	    ;
     }
-  
+
     /* check for charstring start */
     if (pos + 2 + cs_start_len < line_len
 	&& pos > digits
@@ -425,7 +425,7 @@ eexec_line(unsigned char *line, int line_len)
 	    return 0;
 	}
     }
-  
+
     /* otherwise, just output the line */
   not_charstring:
     /* 6.Oct.2003 - Werner Lemberg reports a stupid Omega font that behaves
@@ -444,7 +444,7 @@ eexec_line(unsigned char *line, int line_len)
 	    return eexec_line((unsigned char *) (CharStrings + 12 + n - 1), line_len - len);
 	}
     }
-  
+
     if (line[line_len - 1] == '\r') {
 	line[line_len - 1] = '\n';
 	cut_newline = 1;
@@ -457,7 +457,7 @@ eexec_line(unsigned char *line, int line_len)
     /* look for `currentfile closefile' to see if we should stop decrypting */
     if (oog_memstr(line, line_len, "currentfile closefile", 21) != 0)
 	in_eexec = -1;
-  
+
     return cut_newline;
 }
 
@@ -489,7 +489,7 @@ disasm_output_ascii(char *line, int len)
     if (was_in_eexec < 0) {
 	int i = 0;
 	int save_char = 0;	/* note: save[] is unsigned char * */
-    
+
 	while (i < save_len) {
 	    /* grab a line */
 	    int start = i;
@@ -519,7 +519,7 @@ disasm_output_ascii(char *line, int len)
 	}
 	save_len = 0;
     }
-  
+
     if (!all_zeroes(line))
 	output(line);
 }
@@ -531,10 +531,10 @@ disasm_output_binary(unsigned char *data, int len)
 {
     static int ignore_newline;
     static uint16_t er;
-  
+
     byte plain;
     int i;
-  
+
     /* in the ASCII portion of a binary section, just save this data */
     if (in_eexec < 0) {
 	append_save(data, len);
@@ -557,13 +557,13 @@ disasm_output_binary(unsigned char *data, int len)
 	data += i;
 	len -= i;
     }
-  
+
     /* now make lines: collect until '\n' or '\r' and pass them off to
        eexec_line. */
     i = 0;
     while (in_eexec > 0) {
 	int start = i;
-    
+
 	for (; i < len; i++) {
 	    byte cipher = data[i];
 	    plain = (byte)(cipher ^ (er >> 8));
@@ -572,12 +572,12 @@ disasm_output_binary(unsigned char *data, int len)
 	    if (plain == '\r' || plain == '\n')
 		break;
 	}
-    
+
 	if (ignore_newline && start < i && data[start] == '\n') {
 	    ignore_newline = 0;
 	    continue;
 	}
-    
+
 	if (i >= len) {
 	    if (start < len)
 		append_save(data + start, i - start);
@@ -587,7 +587,7 @@ disasm_output_binary(unsigned char *data, int len)
 	i++;
 	ignore_newline = eexec_line(data + start, i - start);
     }
-  
+
     /* if in_eexec < 0, we have some plaintext lines sitting around in a binary
        section of the PFB. save them for later */
     if (in_eexec < 0 && i < len)
@@ -678,16 +678,16 @@ main(int argc, char *argv[])
   int c;
   FILE *ifp = 0;
   const char *ifp_filename = "<stdin>";
-  
+
   Clp_Parser *clp =
     Clp_NewParser(argc, (const char * const *)argv, sizeof(options) / sizeof(options[0]), options);
   program_name = Clp_ProgramName(clp);
-  
+
   /* interpret command line arguments using CLP */
   while (1) {
     int opt = Clp_Next(clp);
     switch (opt) {
-      
+
      output_file:
      case OUTPUT_OPT:
       if (ofp)
@@ -699,12 +699,12 @@ main(int argc, char *argv[])
 	if (!ofp) fatal_error("%s: %s", clp->vstr, strerror(errno));
       }
       break;
-      
+
      case HELP_OPT:
       usage();
       exit(0);
       break;
-      
+
      case VERSION_OPT:
       printf("t1disasm (LCDF t1utils) %s\n", VERSION);
       printf("Copyright (C) 1992-2003 I. Lee Hetherington, Eddie Kohler et al.\n\
@@ -713,7 +713,7 @@ There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
       exit(0);
       break;
-      
+
      case Clp_NotOption:
       if (ifp && ofp)
 	fatal_error("too many arguments");
@@ -727,37 +727,37 @@ particular purpose.\n");
 	if (!ifp) fatal_error("%s: %s", clp->vstr, strerror(errno));
       }
       break;
-      
+
      case Clp_Done:
       goto done;
-      
+
      case Clp_BadOption:
       short_usage();
       exit(1);
       break;
-      
+
     }
   }
-  
+
  done:
   if (!ifp) ifp = stdin;
   if (!ofp) ofp = stdout;
-  
+
 #if defined(_MSDOS) || defined(_WIN32)
   /* As we might be processing a PFB (binary) input file, we must set its file
      mode to binary. */
   _setmode(_fileno(ifp), _O_BINARY);
 #endif
-  
+
   /* prepare font reader */
   fr.output_ascii = disasm_output_ascii;
   fr.output_binary = disasm_output_binary;
   fr.output_end = disasm_output_end;
-  
+
   /* peek at first byte to see if it is the PFB marker 0x80 */
   c = getc(ifp);
   ungetc(c, ifp);
-  
+
   /* do the file */
   if (c == PFB_MARKER)
     process_pfb(ifp, ifp_filename, &fr);
@@ -765,15 +765,15 @@ particular purpose.\n");
     process_pfa(ifp, ifp_filename, &fr);
   else
     fatal_error("%s does not start with font marker (`%%' or 0x80)", ifp_filename);
-  
+
   fclose(ifp);
   fclose(ofp);
-  
+
   if (unknown)
     error((unknown > 1
 	   ? "encountered %d unknown charstring commands"
 	   : "encountered %d unknown charstring command"),
 	  unknown);
-  
+
   return (error_count ? 1 : 0);
 }
