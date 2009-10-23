@@ -1,5 +1,11 @@
 T1utils NEWS
 
+Version 1.35   22.Oct.2009
+
+* Don't use "getline" as a symbol (reported by Karl Berry and
+  C.M. Connelly).
+
+
 Version 1.34   1.Mar.2008
 
 * Add '--enable-multiplatform' (requested by Karl Berry).
