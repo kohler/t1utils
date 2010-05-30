@@ -100,7 +100,7 @@ error(const char *message, ...)
   putc('\n', stderr);
 }
 
-void
+static void
 short_usage(void)
 {
   fprintf(stderr, "Usage: %s [OPTION]... [INPUT [OUTPUT]]\n\
@@ -108,7 +108,7 @@ Try `%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
-void
+static void
 usage(void)
 {
   printf("\
@@ -172,7 +172,7 @@ pfa_output_binary(unsigned char *data, int len)
 }
 
 static void
-pfa_output_end()
+pfa_output_end(void)
 {
 }
 

@@ -85,7 +85,7 @@ pfb_output_binary(unsigned char *s, int len)
 }
 
 static void
-pfb_output_end()
+pfb_output_end(void)
 {
   pfb_writer_end(&w);
 }
@@ -132,7 +132,7 @@ error(const char *message, ...)
 }
 
 
-void
+static void
 short_usage(void)
 {
   fprintf(stderr, "Usage: %s [OPTION]... [INPUT [OUTPUT]]\n\
@@ -141,7 +141,7 @@ Try `%s --help' for more information.\n",
 }
 
 
-void
+static void
 usage(void)
 {
   printf("\

@@ -595,7 +595,7 @@ disasm_output_binary(unsigned char *data, int len)
 }
 
 static void
-disasm_output_end()
+disasm_output_end(void)
 {
     /* take care of leftover saved data */
     static char crap[1] = "";
@@ -640,7 +640,7 @@ error(const char *message, ...)
   error_count++;
 }
 
-void
+static void
 short_usage(void)
 {
   fprintf(stderr, "Usage: %s [INPUT [OUTPUT]]\n\
@@ -648,7 +648,7 @@ Try `%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
-void
+static void
 usage(void)
 {
   printf("\
