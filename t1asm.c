@@ -109,6 +109,7 @@ static struct command {
   { "and", 12, 3 },		/* Type 2 */
   { "blend", 16, -1 },		/* Type 2 */
   { "callgsubr", 29, -1 },	/* Type 2 */
+  { "callother", 12, 16 },	/* Type 1 ONLY */
   { "callothersubr", 12, 16 },	/* Type 1 ONLY */
   { "callsubr", 10, -1 },
   { "closepath", 9, -1 },	/* Type 1 ONLY */
