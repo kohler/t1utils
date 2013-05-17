@@ -1,31 +1,12 @@
-T1UTILS VERSION 1.37 NOTES
-==========================
+T1UTILS
+=======
 
-   You need an ANSI C compiler, such as gcc.
-
-   Just type `./configure', then `make'. `make install' will build and
-install the utilities and their manual pages.
-
-   `./configure' accepts the usual options. See `INSTALL' for more
-details. The most commonly used option is `--prefix', which can be used
-to install the utilities in a place other than /usr/local.
-
-   Changes since version 1.2 (c) 1998-2008 Eddie Kohler, under the same
-redistribution copyright as I. Lee Hetherington's. See below for I. Lee
-Hetherington's original README from 1992, updated slightly for today's
-t1utils.
-
-Eddie Kohler
-ekohler@gmail.com
-
-####################################################################
-
-t1utils is a collection of simple type-1 font manipulation programs.
-Together, they allow you to convert between PFA (ASCII) and PFB (binary)
-formats, disassemble PFA or PFB files into human-readable form, reassemble
-them into PFA or PFB format. Additionally you can extract font resources
-from a Macintosh font file (ATM/Laserwriter), or create a Macintosh Type 1
-font file from a PFA or PFB font.
+   t1utils is a collection of simple type-1 font manipulation
+programs. Together, they allow you to convert between PFA (ASCII) and
+PFB (binary) formats, disassemble PFA or PFB files into human-readable
+form, reassemble them into PFA or PFB format. Additionally you can
+extract font resources from a Macintosh font file or create a
+Macintosh Type 1 font file from a PFA or PFB font.
 
 There are currently six programs:
 
@@ -57,25 +38,32 @@ t1mac		creates a Macintosh Type 1 file from a PFA or PFB-format
 		containing bitmap fonts if you do not have such a suitcase
 		for the font already. T1utils cannot help you do this.
 
-...
+Installation
+------------
 
-Thanks to Kai-Uwe Herbing (herbing@netmbx.netmbx.de) for the MS-DOS
-port (Microsoft C/C++ compiler).
+   You need an ANSI C compiler, such as gcc.
 
-The copyright on all of the tools in t1utils looks like:
+   Just type `./configure', then `make'. `make install' will build and
+install the utilities and their manual pages.
 
-	Copyright (c) 1992 by I. Lee Hetherington, all rights
-	reserved.
-	
-	Permission is hereby granted to use, modify, and distribute
-	this program for any purpose provided this copyright notice
-	and the one below remain intact.
+   `./configure' accepts the usual options. See `INSTALL' for more
+details. The most commonly used option is `--prefix', which can be used
+to install the utilities in a place other than /usr/local.
 
-Note that these tools should not be used to illegally copy type-1 font
-programs.  Typeface design is an intricate art that should be
+Copyright and license
+---------------------
+
+   The original t1utils were (c) 1992 I. Lee Hetherington. Changes
+since version 1.2 are (c) 1998-2013 Eddie Kohler. Distribution is
+under the Click LICENSE, a BSD-like license described in the LICENSE
+file in this directory.
+
+   Note that these tools should not be used to illegally copy type-1
+font programs. Typeface design is an intricate art that should be
 rewarded.
+
+Eddie Kohler
+ekohler@gmail.com
 
 I. Lee Hetherington
 ilh@lcs.mit.edu
-
-####################################################################
