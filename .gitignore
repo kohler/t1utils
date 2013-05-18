@@ -4,7 +4,6 @@ Makefile
 Makefile.in
 aclocal.m4
 autom4te*
-clp.c
 config.cache
 config.guess
 config.h
@@ -19,7 +18,6 @@ include
 install-sh
 missing
 stamp-h*
-strerror.c
 t1ascii
 t1asm
 t1binary
