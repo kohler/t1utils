@@ -67,6 +67,7 @@
 #include <limits.h>
 #include <stdarg.h>
 #include <errno.h>
+#include <assert.h>
 #include <lcdf/clp.h>
 #include "t1lib.h"
 
@@ -317,6 +318,11 @@ static int save_cap = 0;
 static void
 append_save(const unsigned char *line, int len)
 {
+  if (line == save) {
+    assert(len <= save_cap);
+    save_len = len;
+    return;
+  }
   if (save_len + len >= save_cap) {
     unsigned char *new_save;
     if (!save_cap) save_cap = 1024;
@@ -366,6 +372,7 @@ eexec_line(unsigned char *line, int line_len)
 	append_save(line, line_len);
 	line = save;
 	line_len = save_len;
+        save_len = 0;
     }
 
     if (!line_len)
@@ -419,12 +426,10 @@ eexec_line(unsigned char *line, int line_len)
 	    decrypt_charstring(line + pos + 2 + cs_start_len, cs_len);
 	    pos += 2 + cs_start_len + cs_len;
 	    fprintf(ofp, "\t}%.*s", line_len - pos, line + pos);
-	    save_len = 0;
 	    return cut_newline;
 	} else {
 	    /* not long enough! */
-	    if (line != save)
-		append_save(line, line_len);
+            append_save(line, line_len);
 	    return 0;
 	}
     }
@@ -455,7 +460,6 @@ eexec_line(unsigned char *line, int line_len)
     set_lenIV((char *)line);
     set_cs_start((char *)line);
     fprintf(ofp, "%.*s", line_len, line);
-    save_len = 0;
 
     /* look for `currentfile closefile' to see if we should stop decrypting */
     if (oog_memstr(line, line_len, "currentfile closefile", 21) != 0)
