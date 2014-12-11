@@ -633,6 +633,7 @@ fatal_error(const char *message, ...)
   fprintf(stderr, "%s: ", program_name);
   vfprintf(stderr, message, val);
   fputc('\n', stderr);
+  va_end(val);
   exit(1);
 }
 
@@ -645,6 +646,7 @@ error(const char *message, ...)
   vfprintf(stderr, message, val);
   fputc('\n', stderr);
   error_count++;
+  va_end(val);
 }
 
 static void
