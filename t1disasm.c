@@ -70,6 +70,7 @@
 #include <assert.h>
 #include <lcdf/clp.h>
 #include "t1lib.h"
+#include "t1asmhelp.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,8 +79,6 @@ extern "C" {
 typedef unsigned char byte;
 
 static FILE *ofp;
-static int lenIV = 4;
-static char cs_start[10];
 static int unknown = 0;
 
 /* decryption stuff */
@@ -89,44 +88,6 @@ static uint16_t er_default = 55665;
 
 static int error_count = 0;
 
-
-/* If the line contains an entry of the form `/lenIV <num>' then set the global
-   lenIV to <num>.  This indicates the number of random bytes at the beginning
-   of each charstring. */
-
-static void
-set_lenIV(char *line)
-{
-  char *p = strstr(line, "/lenIV ");
-
-  /* Allow lenIV to be negative. Thanks to Tom Kacvinsky <tjk@ams.org> */
-  if (p && (isdigit(p[7]) || p[7] == '+' || p[7] == '-')) {
-    lenIV = atoi(p + 7);
-  }
-}
-
-static void
-set_cs_start(char *line)
-{
-  char *p, *q, *r;
-
-  if ((p = strstr(line, "string currentfile"))) {
-    /* enforce presence of `readstring' -- 5/29/99 */
-    if (!strstr(line, "readstring"))
-      return;
-    /* locate the name of the charstring start command */
-    *p = '\0';					  /* damage line[] */
-    q = strrchr(line, '/');
-    if (q) {
-      r = cs_start;
-      ++q;
-      while (!isspace(*q) && *q != '{')
-	*r++ = *q++;
-      *r = '\0';
-    }
-    *p = 's';					  /* repair line[] */
-  }
-}
 
 /* Subroutine to output strings. */
 
