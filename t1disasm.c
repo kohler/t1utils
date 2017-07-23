@@ -299,23 +299,6 @@ append_save(const unsigned char *line, int len)
   save_len += len;
 }
 
-/* 23.Feb.2004 - use 'memstr', not strstr, because the strings input to
-   eexec_line aren't null terminated! Reported by Werner Lemberg. */
-
-static const unsigned char *
-oog_memstr(const unsigned char *line, int line_len, const char *pattern, int pattern_len)
-{
-    const unsigned char *try;
-    const unsigned char *last = line + line_len - pattern_len + 1;
-    while (line < last
-	   && (try = memchr(line, (unsigned char)*pattern, last - line))) {
-	if (memcmp(try, pattern, pattern_len) == 0)
-	    return try;
-	else
-	    line = try + 1;
-    }
-    return 0;
-}
 
 /* returns 1 if next \n should be deleted */
 
@@ -402,7 +385,7 @@ eexec_line(unsigned char *line, int line_len)
        SAME LINE. */
     {
 	const char *CharStrings = (const char *)
-	    oog_memstr(line, line_len, "/CharStrings ", 13);
+	    memmem(line, line_len, "/CharStrings ", 13);
 	int crap, n;
 	char should_be_slash = 0;
 	if (CharStrings
@@ -418,12 +401,12 @@ eexec_line(unsigned char *line, int line_len)
 	line[line_len - 1] = '\n';
 	cut_newline = 1;
     }
-    set_lenIV((char *)line);
-    set_cs_start((char *)line);
+    set_lenIV((char*) line, line_len);
+    set_cs_start((char*) line, line_len);
     fprintf(ofp, "%.*s", line_len, line);
 
     /* look for `currentfile closefile' to see if we should stop decrypting */
-    if (oog_memstr(line, line_len, "currentfile closefile", 21) != 0)
+    if (memmem(line, line_len, "currentfile closefile", 21) != 0)
 	in_eexec = -1;
 
     return cut_newline;

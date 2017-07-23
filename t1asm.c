@@ -746,9 +746,9 @@ particular purpose.\n");
 	eexec_start(p);
 	continue;
       } else if (strncmp(line, "/lenIV", 6) == 0) {
-        set_lenIV(line);
+        set_lenIV(line, strlen(line));
       } else if ((p = strstr(line, "string currentfile"))) {
-        set_cs_start(line);
+        set_cs_start(line, strlen(line));
       }
     }
 
