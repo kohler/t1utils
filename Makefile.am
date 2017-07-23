@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-AUTOMAKE_OPTIONS = foreign check-news
+AUTOMAKE_OPTIONS = foreign
 
 bin_PROGRAMS = t1ascii t1binary t1asm t1disasm t1unmac t1mac
 man_MANS = t1ascii.1 t1binary.1 t1asm.1 t1disasm.1 t1unmac.1 t1mac.1
@@ -20,7 +20,7 @@ t1mac_SOURCES = include/lcdf/clp.h include/lcdf/inttypes.h \
 AM_CPPFLAGS = -I$(top_srcdir)/include
 LDADD = @LIBOBJS@
 
-EXTRA_DIST = $(man_MANS) t1utils.spec
+EXTRA_DIST = $(man_MANS) README.md NEWS.md t1utils.spec
 
 versionize:
 	perl -pi -e "s/^\\.ds V.*/.ds V $(VERSION)/;" t1ascii.1 t1binary.1 t1disasm.1 t1asm.1 t1unmac.1 t1mac.1
