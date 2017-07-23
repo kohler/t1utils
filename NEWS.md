@@ -1,6 +1,11 @@
 T1utils NEWS
 ============
 
+## Version 1.40 – 23.Jul.2017
+
+* t1disasm: More security fixes reported by Jakub Wilk and Niels Thykier.
+
+
 ## Version 1.39 – 26.Feb.2015
 
 * t1disasm: Security fixes for buffer overrun reported by Jakub Wilk
