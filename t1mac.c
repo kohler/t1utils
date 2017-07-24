@@ -949,7 +949,7 @@ particular purpose.\n");
   /* prepare resource fork file */
   rfork_f = tmpfile();
   if (!rfork_f)
-    fatal_error("cannot open temorary file: %s", strerror(errno));
+    fatal_error("cannot open temporary file: %s", strerror(errno));
   for (i = 0; i < RFORK_HEADERLEN; i++)
     putc(0, rfork_f);
   init_current_post();
