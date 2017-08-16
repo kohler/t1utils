@@ -1,6 +1,11 @@
 T1utils NEWS
 ============
 
+## Version 1.41 – 16.Aug.2017
+
+* t1asm, t1disasm: More security fixes.
+
+
 ## Version 1.40 – 23.Jul.2017
 
 * t1disasm: More security fixes reported by Jakub Wilk and Niels Thykier.
