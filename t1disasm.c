@@ -303,6 +303,35 @@ append_save(const unsigned char *line, int len)
 }
 
 
+static unsigned char*
+check_eexec_charstrings_begin(unsigned char* line, int line_len)
+{
+    unsigned char* line_end = line + line_len;
+    line = memmem(line, line_len, "/CharStrings ", 13);
+    if (!line)
+        return 0;
+    line += 13;
+    while (line < line_end && isspace(*line))
+        ++line;
+    if (line == line_end || !isdigit(*line))
+        return 0;
+    while (line < line_end && isdigit(*line))
+        ++line;
+    if (line == line_end || !isspace(*line))
+        return 0;
+    while (line < line_end && isspace(*line))
+        ++line;
+    if (line_end - line < 14 || memcmp(line, "dict dup begin", 14) != 0)
+        return 0;
+    line += 14;
+    while (line < line_end && isspace(*line))
+        ++line;
+    if (line == line_end || *line != '/')
+        return 0;
+    return line;
+}
+
+
 /* returns 1 if next \n should be deleted */
 
 static int
@@ -387,16 +416,11 @@ eexec_line(unsigned char *line, int line_len)
        badly: a charstring definition follows "/Charstrings ... begin", ON THE
        SAME LINE. */
     {
-        const char *CharStrings = (const char *)
-            memmem(line, line_len, "/CharStrings ", 13);
-        int crap, n;
-        char should_be_slash = 0;
-        if (CharStrings
-            && sscanf(CharStrings + 12, " %d dict dup begin %c%n", &crap, &should_be_slash, &n) >= 2
-            && should_be_slash == '/') {
-            int len = (CharStrings + 12 + n - 1) - (char *) line;
+        unsigned char* csbegin = check_eexec_charstrings_begin(line, line_len);
+        if (csbegin) {
+            int len = csbegin - line;
             fprintf(ofp, "%.*s\n", len, line);
-            return eexec_line((unsigned char *) (CharStrings + 12 + n - 1), line_len - len);
+            return eexec_line(csbegin, line_len - len);
         }
     }
 
