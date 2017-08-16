@@ -82,7 +82,8 @@ static FILE *ofp;
 static int unknown = 0;
 
 /* decryption stuff */
-static uint16_t c1 = 52845, c2 = 22719;
+static const uint32_t c1 = 52845;
+static const uint32_t c2 = 22719;
 static uint16_t cr_default = 4330;
 static uint16_t er_default = 55665;
 
@@ -155,15 +156,17 @@ decrypt_charstring(unsigned char *line, int len)
         i++;
         val = -(b - 251)*256 - 108 - line[i];
       } else {
-        val =  (line[i+1] & 0xff) << 24;
-        val |= (line[i+2] & 0xff) << 16;
-        val |= (line[i+3] & 0xff) <<  8;
-        val |= (line[i+4] & 0xff) <<  0;
+        uint32_t uval;
+        uval =  (uint32_t) line[i+1] << 24;
+        uval |= (uint32_t) line[i+2] << 16;
+        uval |= (uint32_t) line[i+3] <<  8;
+        uval |= (uint32_t) line[i+4] <<  0;
         /* in case an int32 is larger than four bytes---sign extend */
 #if INT_MAX > 0x7FFFFFFFUL
-        if (val & 0x80000000)
-          val |= ~0x7FFFFFFF;
+        if (uval & 0x80000000U)
+          uval |= ~0x7FFFFFFFU;
 #endif
+        val = (int32_t) uval;
         i += 4;
       }
       sprintf(buf, "%d", val);

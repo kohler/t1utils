@@ -97,7 +97,8 @@ static int charstring_bufsiz;
 
 /* decryption stuff */
 static uint16_t er, cr;
-static uint16_t c1 = 52845, c2 = 22719;
+static const uint32_t c1 = 52845;
+static const uint32_t c2 = 22719;
 
 /* table of charstring commands */
 static struct command {
