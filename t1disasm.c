@@ -392,8 +392,9 @@ eexec_line(unsigned char *line, int line_len)
         && strncmp((const char *)(line + pos + 1), cs_start, cs_start_len) == 0
         && line[pos + 1 + cs_start_len] == ' ') {
         /* check if charstring is long enough */
-        int cs_len = atoi((const char *)(line + digits));
-        if (pos + 2 + cs_start_len + cs_len < line_len) {
+        long cs_len = strtol((const char *) (line + digits), (char**) 0, 10);
+        if (cs_len >= 0
+            && cs_len < line_len - pos - 2 - cs_start_len) {
             /* long enough! */
             if (line[line_len - 1] == '\r') {
                 line[line_len - 1] = '\n';
