@@ -437,7 +437,7 @@ static void charstring_int(int num)
     charstring_byte(num >> 8);
     charstring_byte(num);
   } else {
-    error("can't format huge number `%d'", num);
+    error("can't format huge number `%d`", num);
     /* output 0 instead */
     charstring_byte(139);
   }
@@ -524,11 +524,11 @@ static void parse_charstring(void)
       }
 
       if (!ok)
-        error("unknown charstring command `%s'", line);
+        error("unknown charstring command `%s`", line);
       else if (one < 0 || one > 255)
-        error("bad charstring command number `%d'", one);
+        error("bad charstring command number `%d`", one);
       else if (two > 255)
-        error("bad charstring command number `%d'", two);
+        error("bad charstring command number `%d`", two);
       else if (two < 0)
         charstring_byte(one);
       else {
@@ -590,7 +590,7 @@ static void
 short_usage(void)
 {
   fprintf(stderr, "Usage: %s [OPTION]... [INPUT [OUTPUT]]\n\
-Try `%s --help' for more information.\n",
+Try `%s --help` for more information.\n",
           program_name, program_name);
 }
 
@@ -598,7 +598,7 @@ static void
 usage(void)
 {
   printf("\
-`T1asm' translates a human-readable version of a PostScript Type 1 font into\n\
+T1asm translates a human-readable version of a PostScript Type 1 font into\n\
 standard PFB or PFA format. The result is written to the standard output\n\
 unless an OUTPUT file is given.\n\
 \n\
@@ -768,10 +768,10 @@ particular purpose.\n");
       for (q = p; isspace((unsigned char) *q) && *q != '\n'; q++)
         /* nada */;
       if (q == p && !*q)
-        error("warning: `currentfile closefile' line too long");
+        error("warning: `currentfile closefile` line too long");
       else if (q != p) {
         if (*q != '\n')
-          error("text after `currentfile closefile' ignored");
+          error("text after `currentfile closefile` ignored");
         *p++ = '\n';
         *p++ = '\0';
       }

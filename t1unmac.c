@@ -110,13 +110,13 @@ reposition(FILE *fi, int32_t absolute)
 {
   if (fseek(fi, absolute, 0) == -1)
     fatal_error("can't seek to position %d\n\
-   (The Mac file may be corrupted, or you may need the `-r' option.)",
-		absolute);
+   (The Mac file may be corrupted, or you may need the `-r` option.)",
+                absolute);
 }
 
 static int blocklen = -1;
 
-static int hex_column = 0;	/* current column of hex ASCII output */
+static int hex_column = 0;      /* current column of hex ASCII output */
 
 static void
 output_hex_byte(FILE *fo, int b)
@@ -165,18 +165,18 @@ extract_data(FILE *fi, FILE *fo, struct pfb_writer *w, int32_t offset, int pfb)
      for (i = 0; i < len; i++) {
        c = read_one(fi);
        if (c == '\n' && skip_newline) {
-	 skip_newline = 0;
-	 continue;
+         skip_newline = 0;
+         continue;
        }
        if (c == '\r') {
-	 c = '\n';
-	 skip_newline = 1;
+         c = '\n';
+         skip_newline = 1;
        } else
-	 skip_newline = 0;
+         skip_newline = 0;
        if (pfb)
-	 PFB_OUTPUT_BYTE(w, c);
+         PFB_OUTPUT_BYTE(w, c);
        else
-	 putc(c, fo);
+         putc(c, fo);
      }
      last_type = PFB_ASCII;
      break;
@@ -209,21 +209,20 @@ extract_data(FILE *fi, FILE *fo, struct pfb_writer *w, int32_t offset, int pfb)
   return more;
 }
 
-
 /*****
  * Command line
  **/
 
-#define OUTPUT_OPT	301
-#define VERSION_OPT	302
-#define HELP_OPT	303
-#define PFB_OPT		304
-#define PFA_OPT		305
-#define MACBINARY_OPT	306
-#define RAW_OPT		307
-#define LINE_LEN_OPT	308
-#define APPLEDOUBLE_OPT	309
-#define BINHEX_OPT	310
+#define OUTPUT_OPT      301
+#define VERSION_OPT     302
+#define HELP_OPT        303
+#define PFB_OPT         304
+#define PFA_OPT         305
+#define MACBINARY_OPT   306
+#define RAW_OPT         307
+#define LINE_LEN_OPT    308
+#define APPLEDOUBLE_OPT 309
+#define BINHEX_OPT      310
 
 static Clp_Option options[] = {
   { "applesingle", 0, APPLEDOUBLE_OPT, 0, 0 },
@@ -268,15 +267,15 @@ static void
 short_usage(void)
 {
   fprintf(stderr, "Usage: %s [OPTION]... INPUT [OUTPUT]\n\
-Try `%s --help' for more information.\n",
-	  program_name, program_name);
+Try `%s --help` for more information.\n",
+          program_name, program_name);
 }
 
 static void
 usage(void)
 {
   printf("\
-`T1unmac' extracts a PostScript Type 1 font from a Macintosh font file. It can\n\
+T1unmac extracts a PostScript Type 1 font from a Macintosh font file. It can\n\
 read MacBinary, AppleSingle, AppleDouble, or BinHex files, or raw Macintosh\n\
 resource forks. The result is written to the standard output unless an OUTPUT\n\
 file is given.\n\
@@ -426,16 +425,16 @@ translate_binhex(FILE *f, FILE *tmpf)
     while (!feof(f)) {
       const char *s;
       for (s = comment; *s; s++) {
-	c = getc(f);
-	if (c != *s)
-	  break;
+        c = getc(f);
+        if (c != *s)
+          break;
       }
       /* skip to end of line */
       while (c >= 0 && c != '\n' && c != '\r')
-	c = getc(f);
+        c = getc(f);
       /* stop if read comment */
       if (!*s)
-	goto found_comment;
+        goto found_comment;
     }
     /* failed */
     return "no comment";
@@ -455,30 +454,30 @@ translate_binhex(FILE *f, FILE *tmpf)
     if (!isspace(c)) {
       /* add 6 bits to bits */
       if (value_table[c] == 255)
-	break;
+        break;
       bits |= (value_table[c] << bitpos);
       bitpos -= 6;
 
       /* output character(s) */
       if (bitpos <= 2) {
-	int d = bits >> 8;
-	bits = (bits << 8) & 0xFF00;
-	bitpos += 8;
-	if (after_x90) {
-	  /* handle compression */
-	  if (d == 0) {
-	    last_char = 0x90;
-	    putc(0x90, tmpf);
-	  } else
-	    for (i = 1; i < d; i++)
-	      putc(last_char, tmpf);
-	  after_x90 = 0;
-	} else if (d == 0x90)
-	  after_x90 = 1;
-	else {
-	  last_char = d;
-	  putc(d, tmpf);
-	}
+        int d = bits >> 8;
+        bits = (bits << 8) & 0xFF00;
+        bitpos += 8;
+        if (after_x90) {
+          /* handle compression */
+          if (d == 0) {
+            last_char = 0x90;
+            putc(0x90, tmpf);
+          } else
+            for (i = 1; i < d; i++)
+              putc(last_char, tmpf);
+          after_x90 = 0;
+        } else if (d == 0x90)
+          after_x90 = 1;
+        else {
+          last_char = d;
+          putc(d, tmpf);
+        }
       }
     }
 
@@ -588,12 +587,12 @@ main(int argc, char *argv[])
      output_file:
      case OUTPUT_OPT:
       if (ofp)
-	fatal_error("output file already specified");
+        fatal_error("output file already specified");
       if (strcmp(clp->vstr, "-") == 0)
-	ofp = stdout;
+        ofp = stdout;
       else {
-	ofp = fopen(clp->vstr, "w");
-	if (!ofp) fatal_error("%s: %s", clp->vstr, strerror(errno));
+        ofp = fopen(clp->vstr, "w");
+        if (!ofp) fatal_error("%s: %s", clp->vstr, strerror(errno));
       }
       break;
 
@@ -625,15 +624,15 @@ particular purpose.\n");
 
      case Clp_NotOption:
       if (ifp && ofp)
-	fatal_error("too many arguments");
+        fatal_error("too many arguments");
       else if (ifp)
-	goto output_file;
+        goto output_file;
       if (strcmp(clp->vstr, "-") == 0)
-	ifp = stdin;
+        ifp = stdin;
       else {
-	ifp_name = clp->vstr;
-	ifp = fopen(clp->vstr, "rb");
-	if (!ifp) fatal_error("%s: %s", clp->vstr, strerror(errno));
+        ifp_name = clp->vstr;
+        ifp = fopen(clp->vstr, "rb");
+        if (!ifp) fatal_error("%s: %s", clp->vstr, strerror(errno));
       }
       break;
 
@@ -683,7 +682,7 @@ particular purpose.\n");
     while (!feof(ifp)) {
       int i = fread(buf, 1, 2048, ifp);
       if (i > 0)
-	fwrite(buf, 1, i, tmp);
+        fwrite(buf, 1, i, tmp);
     }
     if (ferror(ifp))
       fatal_error("%s: %s", ifp_name, strerror(errno));
@@ -699,7 +698,7 @@ particular purpose.\n");
   if (ftell(ifp) == 0)
     fatal_error("%s: empty file\n\
   (Try re-transferring the files using MacBinary format.)",
-		ifp_name);
+                ifp_name);
 
   reposition(ifp, 0);
   if (!raw && !appledouble && !binhex && !macbinary) {
@@ -715,9 +714,9 @@ particular purpose.\n");
     else {
       binhex = 1;
       for (i = 0; i < 4; i++, magic >>= 8)
-	if (!isprint(magic & 0xFF) && !isspace(magic & 0xFF))
-	  /* not an ASCII character, assume not BinHex */
-	  binhex = 0;
+        if (!isprint(magic & 0xFF) && !isspace(magic & 0xFF))
+          /* not an ASCII character, assume not BinHex */
+          binhex = 0;
     }
 
     if (!appledouble && !macbinary && !binhex)
@@ -728,7 +727,7 @@ particular purpose.\n");
     /* raw resource file */
     res_offset = 0;
 
-  } else if (macbinary) {	/* MacBinary (I or II) file */
+  } else if (macbinary) {       /* MacBinary (I or II) file */
     const char *check;
     int32_t data_fork_size;
 
@@ -748,7 +747,7 @@ particular purpose.\n");
 
     res_offset = 128 + data_fork_size;
 
-  } else if (appledouble) {	/* AppleDouble file */
+  } else if (appledouble) {     /* AppleDouble file */
     const char *check;
     const char *applewhat;
     int i, n;
@@ -770,17 +769,17 @@ particular purpose.\n");
     for (i = 0; i < n; i++) {
       int type = read_four(ifp);
       if (type == 0)
-	fatal_error("%s: bad %s file (bad entry descriptor)", ifp_name, applewhat);
-      if (type == 2)		/* resource fork entry */
-	res_offset = read_four(ifp);
+        fatal_error("%s: bad %s file (bad entry descriptor)", ifp_name, applewhat);
+      if (type == 2)            /* resource fork entry */
+        res_offset = read_four(ifp);
       else
-	(void) read_four(ifp);
+        (void) read_four(ifp);
       (void) read_four(ifp);
     }
     if (res_offset < 0)
       fatal_error("%s: bad %s file (no resource fork)", ifp_name, applewhat);
 
-  } else if (binhex) {		/* BinHex file */
+  } else if (binhex) {          /* BinHex file */
     const char *check;
     FILE *tmpf = tmpfile();
     if (!tmpf)
@@ -871,7 +870,7 @@ particular purpose.\n");
     reposition(ifp, res_offset + 16);
     if ((f = fopen("/tmp/x.systemarea", "wb"))) {
       for (i = res_offset + 16; i < res_data_offset; i++) {
-	putc(getc(ifp), f);
+        putc(getc(ifp), f);
       }
       fclose(f);
     }
@@ -888,23 +887,23 @@ particular purpose.\n");
       char buf[2048];
       int x, i, attrs;
       x = ftell(ifp);
-      i = read_two(ifp);	/* ID */
+      i = read_two(ifp);        /* ID */
       read_two(ifp);
       attrs = read_one(ifp);
       sprintf(buf, "/tmp/x.%c%c%c%c.%d", (t>>24)&255, (t>>16)&255, (t>>8)&255, t&255, i);
       fprintf(stderr, "%c%c%c%c.%d %d", (t>>24)&255, (t>>16)&255, (t>>8)&255, t&255, i, attrs);
       if ((f = fopen(buf, "wb"))) {
-	int l;
-	reposition(ifp, res_data_offset + read_three(ifp));
-	l = read_four(ifp);
-	fprintf(stderr, " %d\n", l);
-	while (l > 0) {
-	  int n = (l < 2048 ? l : 2048);
-	  fread(buf, 1, n, ifp);
-	  fwrite(buf, 1, n, f);
-	  l -= n;
-	}
-	fclose(f);
+        int l;
+        reposition(ifp, res_data_offset + read_three(ifp));
+        l = read_four(ifp);
+        fprintf(stderr, " %d\n", l);
+        while (l > 0) {
+          int n = (l < 2048 ? l : 2048);
+          fread(buf, 1, n, ifp);
+          fwrite(buf, 1, n, f);
+          l -= n;
+        }
+        fclose(f);
       }
       reposition(ifp, x + 12);
     }

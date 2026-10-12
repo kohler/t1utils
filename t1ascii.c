@@ -109,7 +109,7 @@ static void
 short_usage(void)
 {
   fprintf(stderr, "Usage: %s [OPTION]... [INPUT [OUTPUT]]\n\
-Try `%s --help' for more information.\n",
+Try `%s --help` for more information.\n",
 	  program_name, program_name);
 }
 
@@ -117,7 +117,7 @@ static void
 usage(void)
 {
   printf("\
-`T1ascii' translates a PostScript Type 1 font from compact binary (PFB) to\n\
+T1ascii translates a PostScript Type 1 font from compact binary (PFB) to\n\
 ASCII (PFA) format. The result is written to the standard output unless an\n\
 OUTPUT file is given.\n\
 \n\
@@ -303,7 +303,7 @@ particular purpose.\n");
   else if (c == '%')
     process_pfa(ifp, ifp_filename, &fr);
   else
-    fatal_error("%s does not start with font marker (`%%' or 0x80)", ifp_filename);
+    fatal_error("%s does not start with font marker (`%%` or 0x80)", ifp_filename);
 
   fclose(ifp);
   fclose(ofp);

@@ -51,7 +51,7 @@ Copyright and license
 ---------------------
 
 The original t1utils were (c) 1992 I. Lee Hetherington, <ilh@lcs.mit.edu>.
-Changes since version 1.2 are (c) 1998-2017 Eddie Kohler. Distribution is
+Changes since version 1.2 are (c) 1998-2026 Eddie Kohler. Distribution is
 under the Click LICENSE, a BSD-like license described in the LICENSE file in
 this directory.
 

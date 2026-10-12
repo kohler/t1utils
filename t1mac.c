@@ -791,7 +791,7 @@ static void
 short_usage(void)
 {
   fprintf(stderr, "Usage: %s [OPTION]... [INPUT [OUTPUT]]\n\
-Try `%s --help' for more information.\n",
+Try `%s --help` for more information.\n",
 	  program_name, program_name);
 }
 
@@ -800,7 +800,7 @@ static void
 usage(void)
 {
   printf("\
-`T1mac' translates a PostScript Type 1 font from PFA or PFB format into\n\
+T1mac translates a PostScript Type 1 font from PFA or PFB format into\n\
 Macintosh Type 1 format. The result can be written in MacBinary II format (the\n\
 default), AppleSingle format, AppleDouble format, or BinHex format, or as a\n\
 raw resource fork. It is sent to the standard output unless an OUTPUT file is\n\
@@ -964,7 +964,7 @@ particular purpose.\n");
   else if (c == '%')
     process_pfa(ifp, ifp_filename, &fr);
   else
-    fatal_error("%s does not start with font marker (`%%' or 0x80)", ifp_filename);
+    fatal_error("%s does not start with font marker (`%%` or 0x80)", ifp_filename);
   if (ifp != stdin)
     fclose(ifp);
 

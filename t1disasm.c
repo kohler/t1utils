@@ -626,7 +626,7 @@ static void
 short_usage(void)
 {
   fprintf(stderr, "Usage: %s [INPUT [OUTPUT]]\n\
-Try `%s --help' for more information.\n",
+Try `%s --help` for more information.\n",
           program_name, program_name);
 }
 
@@ -634,7 +634,7 @@ static void
 usage(void)
 {
   printf("\
-`T1disasm' translates a PostScript Type 1 font in PFB or PFA format into a\n\
+T1disasm translates a PostScript Type 1 font in PFB or PFA format into a\n\
 human-readable, human-editable form. The result is written to the standard\n\
 output unless an OUTPUT file is given.\n\
 \n\
@@ -746,7 +746,7 @@ particular purpose.\n");
   else if (c == '%')
     process_pfa(ifp, ifp_filename, &fr);
   else
-    fatal_error("%s does not start with font marker (`%%' or 0x80)", ifp_filename);
+    fatal_error("%s does not start with font marker (`%%` or 0x80)", ifp_filename);
 
   fclose(ifp);
   fclose(ofp);
