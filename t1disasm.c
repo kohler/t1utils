@@ -207,6 +207,7 @@ decrypt_charstring(unsigned char *line, int len)
           val |= ~0x7FFF;
         sprintf(buf, "%d", val);
         output_token(buf);
+        break;
       }
       case 29: output_token("callgsubr"); break;        /* Type 2 */
       case 30: output_token("vhcurveto"); break;
