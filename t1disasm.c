@@ -138,8 +138,12 @@ decrypt_charstring(unsigned char *line, int len)
       cr = (uint16_t)((cipher + cr) * c1 + c2);
       line[i] = plain;
     }
-    line += lenIV;
-    len -= lenIV;
+    if (lenIV < len) {
+      line += lenIV;
+      len -= lenIV;
+    } else {
+      len = 0;
+    }
   }
 
   /* handle each charstring command */
@@ -147,16 +151,25 @@ decrypt_charstring(unsigned char *line, int len)
     byte b = line[i];
 
     if (b >= 32) {
-      if (b >= 32 && b <= 246)
+      if (b <= 246) {
         val = b - 139;
-      else if (b >= 247 && b <= 250) {
+      } else if (b <= 250) {
+        if (i + 1 >= len) {
+            goto overflow;
+        }
         i++;
         val = (b - 247)*256 + 108 + line[i];
-      } else if (b >= 251 && b <= 254) {
+      } else if (b <= 254) {
+        if (i + 1 >= len) {
+            goto overflow;
+        }
         i++;
         val = -(b - 251)*256 - 108 - line[i];
       } else {
         uint32_t uval;
+        if (i + 4 >= len) {
+            goto overflow;
+        }
         uval =  (uint32_t) line[i+1] << 24;
         uval |= (uint32_t) line[i+2] << 16;
         uval |= (uint32_t) line[i+3] <<  8;
@@ -200,6 +213,9 @@ decrypt_charstring(unsigned char *line, int len)
       case 27: output_token("hhcurveto"); break;        /* Type 2 */
       case 28: {                /* Type 2 */
         /* short integer */
+        if (i + 2 >= len) {
+            goto overflow;
+        }
         val =  (line[i+1] & 0xff) << 8;
         val |= (line[i+2] & 0xff);
         i += 2;
@@ -214,6 +230,9 @@ decrypt_charstring(unsigned char *line, int len)
       case 31: output_token("hvcurveto"); break;
       case 12:
         i++;
+        if (i >= len) {
+            goto overflow;
+        }
         b = line[i];
         switch (b) {
         case 0: output_token("dotsection"); break;      /* Type 1 ONLY */
@@ -267,6 +286,7 @@ decrypt_charstring(unsigned char *line, int len)
     }
   }
   if (i > len) {
+  overflow:
     output("\terror\n");
     error("disassembly error: charstring too short");
   }

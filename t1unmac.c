@@ -70,37 +70,30 @@ read_one(FILE *fi)
 static int
 read_two(FILE *fi)
 {
-  int val;
-
-  val = getc(fi);
-  val = (val << 8) | getc(fi);
-
-  return val;
+  int b1 = getc(fi);
+  int b2 = getc(fi);
+  return b1 < 0 || b2 < 0 ? -1 : (b1 << 8) | b2;
 }
 
 static int32_t
 read_three(FILE *fi)
 {
-  int32_t val;
-
-  val = getc(fi);
-  val = (val << 8) | getc(fi);
-  val = (val << 8) | getc(fi);
-
-  return val;
+  int b1 = getc(fi);
+  int b2 = getc(fi);
+  int b3 = getc(fi);
+  return b1 < 0 || b2 < 0 || b3 < 0 ? -1 : (b1 << 16) | (b2 << 8) | b3;
 }
 
 static int32_t
 read_four(FILE *fi)
 {
-  int32_t val;
-
-  val = getc(fi);
-  val = (val << 8) | getc(fi);
-  val = (val << 8) | getc(fi);
-  val = (val << 8) | getc(fi);
-
-  return val;
+  int b1 = getc(fi);
+  int b2 = getc(fi);
+  int b3 = getc(fi);
+  int b4 = getc(fi);
+  return b1 < 0 || b2 < 0 || b3 < 0 || b4 < 0
+    ? -1
+    : (int32_t) (((uint32_t) b1) << 24 | (b2 << 16) | (b3 << 8) | b4);
 }
 
 /* reposition a file with error messages */
@@ -141,29 +134,31 @@ output_hex_byte(FILE *fo, int b)
 /* Function to write four byte length to PFB file: least significant byte
    first. */
 
+#define PS_TYPE_ASCII 1
+#define PS_TYPE_BINARY 2
+#define PS_TYPE_END 5
+
 static int
 extract_data(FILE *fi, FILE *fo, struct pfb_writer *w, int32_t offset, int pfb)
 {
-  enum PS_type { PS_ascii = 1, PS_binary = 2, PS_end = 5 };
   static int last_type = -1;
   static int skip_newline = 0;
   int32_t len;
-  int more = 1;
-  int i, c;
+  int more, pos, c;
 
   reposition(fi, offset);
-  len = read_four(fi) - 2;	/* subtract type field */
+  len = read_four(fi);
+  pos = 2;
 
-  switch ((enum PS_type)read_one(fi)) {
+  switch (read_one(fi)) {
 
-   case PS_ascii: {
+   case PS_TYPE_ASCII: {
      (void) read_one(fi);
      if (last_type != PFB_ASCII && pfb) {
        pfb_writer_output_block(w);
        w->blocktyp = PFB_ASCII;
      }
-     for (i = 0; i < len; i++) {
-       c = read_one(fi);
+     for (; pos < len && (c = read_one(fi)) >= 0; ++pos) {
        if (c == '\n' && skip_newline) {
          skip_newline = 0;
          continue;
@@ -179,10 +174,11 @@ extract_data(FILE *fi, FILE *fo, struct pfb_writer *w, int32_t offset, int pfb)
          putc(c, fo);
      }
      last_type = PFB_ASCII;
+     more = pos == len ? 1 : -1;
      break;
    }
 
-   case PS_binary: {
+   case PS_TYPE_BINARY: {
      (void) read_one(fi);
      if (last_type != PFB_BINARY && pfb) {
        pfb_writer_output_block(w);
@@ -190,22 +186,29 @@ extract_data(FILE *fi, FILE *fo, struct pfb_writer *w, int32_t offset, int pfb)
      } else if (last_type != PFB_BINARY)
        hex_column = 0;
      if (pfb) {
-       while (len--)
-	 PFB_OUTPUT_BYTE(w, read_one(fi));
+       for (; pos < len && (c = read_one(fi)) >= 0; ++pos)
+         PFB_OUTPUT_BYTE(w, c);
      } else {
-       while (len--)
-	 output_hex_byte(fo, read_one(fi));
+       for (; pos < len && (c = read_one(fi)) >= 0; ++pos)
+         output_hex_byte(fo, c);
      }
      last_type = PFB_BINARY;
+     more = pos == len ? 1 : -1;
      break;
    }
 
-   case PS_end:
+   case PS_TYPE_END:
     more = 0;
     break;
 
+   default:
+    more = -1;
+    break;
   }
 
+  if (more < 0) {
+    fatal_error("file corrupted");
+  }
   return more;
 }
 
@@ -830,30 +833,33 @@ particular purpose.\n");
     if (read_four(ifp) == post_type) {
       int nrsrc = 1 + read_two(ifp);
       int list_offset = type_list_offset + read_two(ifp);
-      int rsrc_pos = 0;
       int want_id = 501;
-      int second_time = 1;
-      reposition(ifp, list_offset);
-      /* read resources sequentially, starting with ID 501, until we encounter
-	 an "end" resource or we can't find the next resource */
-      while (rsrc_pos < nrsrc) {
-	int offset = ftell(ifp);
-	int id = read_two(ifp);
-	if (id == want_id) {
-	  (void) read_two(ifp);
-	  (void) read_one(ifp);
-	  num_extracted++;
-	  if (!extract_data(ifp, ofp, &w, res_data_offset + read_three(ifp), pfb))
-	    break;
-	  second_time = 0;
-	  want_id++;
-	}
-	reposition(ifp, offset + 12);
-	rsrc_pos++;
-	if (rsrc_pos >= nrsrc && !second_time) {
-	  reposition(ifp, list_offset);
-	  rsrc_pos = 0;
-	}
+      int saw_end = 0;
+      int progress = 1;
+      /* Read resources by ascending ID, starting with 501, until an "end"
+         resource appears or a full pass over the list finds no new resource.
+         Resources may be stored out of order, so rescan the list as long as
+         each pass keeps finding the next wanted ID. */
+      while (progress && !saw_end) {
+        int rsrc_pos;
+        progress = 0;
+        reposition(ifp, list_offset);
+        for (rsrc_pos = 0; rsrc_pos < nrsrc; rsrc_pos++) {
+          int offset = ftell(ifp);
+          int id = read_two(ifp);
+          if (id == want_id) {
+            (void) read_two(ifp);
+            (void) read_one(ifp);
+            num_extracted++;
+            if (!extract_data(ifp, ofp, &w, res_data_offset + read_three(ifp), pfb)) {
+              saw_end = 1;
+              break;
+            }
+            want_id++;
+            progress = 1;
+          }
+          reposition(ifp, offset + 12);
+        }
       }
       break;
     } else {
