@@ -56,7 +56,7 @@ Assuming "short" has 16 bits and "int" has 32 bits.
     AC_DEFINE(HAVE_FAKE_INT_TYPES, 1, [Define if intXX_t types are not available.])
 fi
 
-AC_CHECK_TYPES(uintptr_t, [], [],
+AC_CHECK_TYPES([uintptr_t, int64_t, uint64_t], [], [],
 [#if HAVE_INTTYPES_H
 # include <inttypes.h>
 #endif

@@ -231,9 +231,9 @@ static Clp_Option options[] = {
   { "applesingle", 0, APPLEDOUBLE_OPT, 0, 0 },
   { "appledouble", 0, APPLEDOUBLE_OPT, 0, 0 },
   { "binhex", 0, BINHEX_OPT, 0, 0 },
-  { "block-length", 0, LINE_LEN_OPT, Clp_ValUnsigned, 0 },
+  { "block-length", 0, LINE_LEN_OPT, Clp_ValInt, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
-  { "line-length", 'l', LINE_LEN_OPT, Clp_ValUnsigned, 0 },
+  { "line-length", 'l', LINE_LEN_OPT, Clp_ValInt, 0 },
   { "macbinary", 0, MACBINARY_OPT, 0, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ValString, 0 },
   { "pfa", 'a', PFA_OPT, 0, 0 },
@@ -665,7 +665,7 @@ particular purpose.\n");
   if (pfb)
     init_pfb_writer(&w, blocklen, ofp);
   else {
-    if (blocklen == -1)
+    if (blocklen < 0)
       blocklen = 64;
     else if (blocklen < 8) {
       blocklen = 8;

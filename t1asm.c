@@ -695,7 +695,7 @@ particular purpose.\n");
 
  done:
   if (!pfb) {
-    if (blocklen == -1)
+    if (blocklen < 0)
       blocklen = 64;
     else if (blocklen < 8) {
       blocklen = 8;
